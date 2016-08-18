@@ -1,1 +1,3 @@
-# homeAutom
+## Home Automation
+
+Supported architecture: Beaglebone.
