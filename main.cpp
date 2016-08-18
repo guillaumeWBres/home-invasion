@@ -18,14 +18,14 @@ int record_video_capture( String filename,
 
 // GoogleVoice
 #include "GoogleVoice/gvoice.h"
-#define GOOGLE_VOICE_INFOS ".gvoice"
+#define GOOGLE_VOICE_INFOS "GoogleVoice/.gvoice"
 
 int google_voice( void );
 std::string google_voice_build_msg( void );
 
 // Custom 
 #define CAPTURE_OUTPUT "output.avi"
-#define SCP_SHELL_SCRIPT "./Capture/scp_to_server.sh"
+#define SCP_SHELL_SCRIPT "./scp_to_server.sh"
 
 int scp_to_server( void );
 
