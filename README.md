@@ -13,6 +13,14 @@ The application uses Google Voice to send a text message.
 The user should provide valid Google Voice credentials
 when building the application.
 
+#### system security
+
+If target is hacked then remote server is
+compromised, target should only talk to a
+dedicated partition somewhere in the cloud.
+
+If target is hacked the Google Voice credentials
+are compromised.
 
 ### Build the application
 
