@@ -1,4 +1,4 @@
-TARGET = Beaglebone
+TARGET = Host 
 
 BUILDROOT_DIR = buildroot
 BUILDROOT_CC_PREFIX = arm-buildroot-linux-uclibcgnueabihf
@@ -19,13 +19,14 @@ endif
 OBJ = main
 SRCS = GoogleVoice/gvoice.cpp
 
-CFLAGS = -O3
+CFLAGS = -O3 -Wall
 
 ifeq ($(TARGET),Beaglebone)
 CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
 LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
 LDFLAGS += -lopencv_core
 LDFLAGS += -lopencv_imgproc
+LDFLAGS += -lhighgui
 else
 CFLAGS += `pkg-config --cflags opencv`
 LDFLAGS = `pkg-config --libs opencv`
@@ -36,7 +37,7 @@ LDFLAGS += -lboost_regex
 LDFLAGS += -lm
 
 $(OBJ): $(OBJ).cpp
-	$(CXX) $(OBJ).cpp -o $(OBJ) $(SRCS) $(CFLAGS) $(LDFLAGS)
+	$(CXX) $(OBJ).cpp $(SRCS) $(CFLAGS) $(LDFLAGS) -o $(OBJ)
 
 clean:
 	rm $(OBJ)
