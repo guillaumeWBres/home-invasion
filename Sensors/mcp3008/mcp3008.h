@@ -17,12 +17,12 @@
 #define MCP_CHANNEL7 (0x07<<4)
 
 typedef struct mcp3008_t {
-	int raw[nCHAN];
-  unsigned int spiFd;
+  unsigned int fd;
 }mcp3008_t;
 
 int mcp3008_init(struct mcp3008_t *mcp, int chipselect); 
 void mcp3008_exit(struct mcp3008_t *mcp);
 int mcp3008_capture(struct mcp3008_t *mcp, uint8_t channel, uint8_t capture_mode);
 void mcp3008_print(struct mcp3008_t *mcp);
+
 #endif
