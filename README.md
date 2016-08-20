@@ -1,9 +1,9 @@
 ## Home Automation
 
-This is a home intrusion detection device.
+This is a home invasion detection device.
 
 The application detects intruders using one
-video camera. When an intrusion has been
+video camera. When an invasion has been
 detected the application shoots a short
 video supposed to be sent to a remote server (ssh/scp).
 
