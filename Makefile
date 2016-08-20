@@ -1,4 +1,4 @@
-USE_OPENCV=No
+USE_OPENCV=Yes
 USE_GOOGLE_VOICE=No
 
 BUILDROOT_DIR = buildroot
@@ -21,21 +21,28 @@ CFLAGS = -O3 -Wall
 
 ifeq ($(USE_GOOGLE_VOICE),Yes)
 CFLAGS += -DUSE_GOOGLE_VOICE
-SRCS += GoogleVoice/gvoice.cpp
-SRCS += GoogleVoice/send_text.cpp
+
 LDFLAGS = -lcurl
 LDFLAGS += -lboost_regex
-endif
 
+SRCS += GoogleVoice/gvoice.cpp
+SRCS += GoogleVoice/send_text.cpp
+endif
 
 ifeq ($(USE_OPENCV),Yes)
 CFLAGS += -DUSE_OPENCV
-SRCS += OpenCV/opencv_lib.cpp
 CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
+
 LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
 LDFLAGS += -lopencv_core
 LDFLAGS += -lopencv_imgproc
-LDFLAGS += -lhighgui
+LDFLAGS += -lopencv_video
+LDFLAGS += -lopencv_objdetect
+LDFLAGS += -lopencv_videoio
+LDFLAGS += -lopencv_imgproc
+LDFLAGS += -lopencv_highgui
+
+SRCS += OpenCV/opencv_lib.cpp
 endif
 
 LDFLAGS += -lm
