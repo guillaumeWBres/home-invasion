@@ -33,6 +33,7 @@ CFLAGS += -O3 -Wall
 
 ifeq ($(USE_OPENCV),Yes)
 CFLAGS += -DUSE_OPENCV
+SRCS += OpenCV/opencv_lib.cpp
 CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
 LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
 LDFLAGS += -lopencv_core
