@@ -7,6 +7,8 @@
 
 using namespace std;
 
+int scp_to_server( void );
+
 #ifdef USE_OPENCV
 	#include <opencv2/opencv.hpp>
 	#include <opencv2/imgproc/imgproc.hpp>
@@ -19,16 +21,13 @@ using namespace std;
 #define CAPTURE_OUTPUT "output.avi"
 #define SCP_SHELL_SCRIPT "./scp_to_server.sh"
 
-int scp_to_server( void );
+#include "Sensors/mcp3008/spi.h"
+#include "Sensors/mcp3008/mcp3008.h"
+#define MCP3008_SPI_CHIPSELECT 0
+#define MCP3008_CHANNEL0 0
+#define MCP3008_CHANNEL1 1
 
-// ADC
-#if USE_ADC
-	#include "Sensors/mcp3008/spi.h"
-	#include "Sensors/mcp3008/mcp3008.h"
-	#define MCP3008_SPI_CHIPSELECT 0
-	#define MCP3008_CHANNEL0 0
-	#define MCP3008_CHANNEL1 1
-#endif
+#define DARKNESS_THRESHOLD 25
 
 int main( int argc, char **argv ){
 	

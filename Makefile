@@ -1,6 +1,5 @@
-USE_OPENCV = No
-USE_GOOGLE_VOICE = No
-USE_ADC=Yes
+USE_OPENCV=No
+USE_GOOGLE_VOICE=No
 
 BUILDROOT_DIR = buildroot
 BUILDROOT_CC_PREFIX = arm-buildroot-linux-uclibcgnueabihf
@@ -15,11 +14,10 @@ CXX = $(BUILDROOT_CROSS_COMPILE)-g++
 
 OBJ = main
 
-ifeq ($(USE_ADC),Yes)
-CFLAGS = -DUSE_ADC 
 SRCS = Sensors/mcp3008/spi.c
 SRCS += Sensors/mcp3008/mcp3008.c
-endif
+
+CFLAGS = -O3 -Wall
 
 ifeq ($(USE_GOOGLE_VOICE),Yes)
 CFLAGS += -DUSE_GOOGLE_VOICE
@@ -29,7 +27,6 @@ LDFLAGS = -lcurl
 LDFLAGS += -lboost_regex
 endif
 
-CFLAGS += -O3 -Wall
 
 ifeq ($(USE_OPENCV),Yes)
 CFLAGS += -DUSE_OPENCV
