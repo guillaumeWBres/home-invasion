@@ -27,7 +27,7 @@ are compromised.
 Use the main script to do so:
 
 ```bash
-	./build.sh
+./build.sh
 ```
 
 Install the generated root file system onto
@@ -49,7 +49,8 @@ Linux system is built using Buildroot.
 
 ### Todo
 
-1. Support a few sensors to provide more robust
-detection.
+1. Use Luminance detection to (re)calibrate camera
+2. Use sharp sensor
+3. Use IR sensor
 
-2. Test detection in rough conditions.
+4. Test Video detection in rough conditions 
