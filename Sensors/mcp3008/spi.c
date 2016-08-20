@@ -3,9 +3,9 @@
 #include <linux/spi/spidev.h>	
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "spi.h"
 
-/* global var pour config */
 int spi_cs0_fd;				
 int spi_cs1_fd;			
 	
@@ -13,34 +13,26 @@ unsigned char spi_mode;
 unsigned char spi_bitsPerWord;
 unsigned int spi_speed;
 
+int open_spi (int slave_select, int mode, int speed_hz){
 
-int open_spi (int slave_select, int mode, int speed_hz)
-{
     int status_value = -1;
     int *spi_cs_fd;
  
-    switch(mode)
-    {
-	/* CPOL=0 CPHA=0 */
-	case 0: spi_mode = SPI_MODE_0; break;
-	/* CPOL=0 CPHA=1 */
-	case 1: spi_mode = SPI_MODE_1; break;
-	/* CPOL=1 CPHA=0 */
-	case 2: spi_mode = SPI_MODE_2; break;
-	/* CPOL=1 CPHA=1 */
-	case 3: spi_mode = SPI_MODE_3; break;
-	default: perror("MODE VALUE[0:3]"); exit(EXIT_FAILURE); break; 
+    switch(mode){
+		case 0: spi_mode = SPI_MODE_0; break; // CPOL 0 CPHA 0
+		case 1: spi_mode = SPI_MODE_1; break; // CPOL 0 CPHA 1
+		case 2: spi_mode = SPI_MODE_2; break; // CPOL 1 CPHA 0
+		case 3: spi_mode = SPI_MODE_3; break; // CPOL 1 CPHA 1
+		default: perror("MODE VALUE[0:3]"); exit(EXIT_FAILURE); break; 
     }
     
     spi_bitsPerWord = 8;
     spi_speed = speed_hz;	 
 
-    if (slave_select)
- 	/* CS1 */
-    	spi_cs_fd = &spi_cs1_fd;
-    else
-	/* CS0 */
-    	spi_cs_fd = &spi_cs0_fd;
+    if (slave_select) 
+	 	spi_cs_fd = &spi_cs1_fd;
+    else 
+	 	spi_cs_fd = &spi_cs0_fd;
 
     if (slave_select)
     	*spi_cs_fd = open("/dev/spidev0.1", O_RDWR);
@@ -103,10 +95,8 @@ int close_spi(int slave_select)
     int *spi_cs_fd;
 
     if (slave_select)
-	/* CS1 */
     	spi_cs_fd = &spi_cs1_fd;
     else
-	/* CS0 */
     	spi_cs_fd = &spi_cs0_fd;
 
     status_value = close(*spi_cs_fd);
@@ -118,29 +108,25 @@ int close_spi(int slave_select)
     return(status_value);
 }
 
-
-int spi_write_then_read (int slave_select, unsigned char *buff, int num_of_byte)
+int spi_write_then_read (int slave_select, char *buff, int num_of_byte)
 {
-    struct spi_ioc_transfer spi[num_of_byte]; 
-    int retVal = -1;
-    int *spi_cs_fd;
+	struct spi_ioc_transfer spi[num_of_byte]; 
+	int i =0;
+	int retVal = -1;
+	int *spi_cs_fd;
 
     if (slave_select)
-	/* CS1 */
     	spi_cs_fd = &spi_cs1_fd;
     else
-	/* CS0 */
     	spi_cs_fd = &spi_cs0_fd;
 
-	//1 Transfer for 1 byte
-	int i =0;
 	for (i=0; i < num_of_byte ;i++)
 	{
-		spi[i].tx_buf        = (unsigned long)(buff + i); 
-		spi[i].rx_buf        = (unsigned long)(buff + i);
-		spi[i].len           = sizeof(*(buff + i)) ;
-		spi[i].delay_usecs   = 0;
-		spi[i].speed_hz      = spi_speed ;
+		spi[i].tx_buf = (unsigned long)(buff + i); 
+		spi[i].rx_buf = (unsigned long)(buff + i);
+		spi[i].len = sizeof(*(buff + i)) ;
+		spi[i].delay_usecs = 0;
+		spi[i].speed_hz = spi_speed ;
 		spi[i].bits_per_word = spi_bitsPerWord ;
 		spi[i].cs_change = 0;
 	}
