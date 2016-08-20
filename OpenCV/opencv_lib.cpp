@@ -1,8 +1,6 @@
 // CXX
 #include <iostream>
 
-// OpenCV
-
 int record_video_capture( String filename, 
 		int format, float seconds, VideoCapture cap )
 {
@@ -41,3 +39,14 @@ int record_video_capture( String filename,
 	return 0;
 }
 
+void modify_brightness( Mat matrice, 
+					float alpha, float beta ){
+	for ( int y=0; y<matrice.rows; y++ ){
+		for( int x=0; x<matrice.cols; x++ ){
+			for ( int ch=0; ch<3; ch++ ){
+				float _prev = matrice.at<Vec3b>(y,x)[c];
+				matrice.at<Vec3b>(y,x)[c] = _prev * alpha + beta;
+			}
+		}
+	}
+}
