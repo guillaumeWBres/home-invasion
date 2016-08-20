@@ -1,7 +1,14 @@
 // CXX
 #include <iostream>
+#include <string>
 
-int record_video_capture( String filename, 
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+using namespace cv;
+
+/* int record_video_capture( std::string filename, 
 		int format, float seconds, VideoCapture cap )
 {
 	VideoWriter writer;
@@ -37,15 +44,15 @@ int record_video_capture( String filename,
 	
 	std::cout << "Video file " << filename << " has been recorded\n";
 	return 0;
-}
+}*/
 
 void modify_brightness( Mat matrice, 
 					float alpha, float beta ){
 	for ( int y=0; y<matrice.rows; y++ ){
 		for( int x=0; x<matrice.cols; x++ ){
 			for ( int ch=0; ch<3; ch++ ){
-				float _prev = matrice.at<Vec3b>(y,x)[c];
-				matrice.at<Vec3b>(y,x)[c] = _prev * alpha + beta;
+				float _prev = matrice.at<Vec3b>(y,x)[ch];
+				matrice.at<Vec3b>(y,x)[ch] = _prev * alpha + beta;
 			}
 		}
 	}
