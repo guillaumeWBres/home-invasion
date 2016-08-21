@@ -8,7 +8,7 @@
 
 using namespace cv;
 
-/* int record_video_capture( std::string filename, 
+int record_video_capture( std::string filename, 
 		int format, float seconds, VideoCapture cap )
 {
 	VideoWriter writer;
@@ -44,7 +44,7 @@ using namespace cv;
 	
 	std::cout << "Video file " << filename << " has been recorded\n";
 	return 0;
-}*/
+}
 
 void modify_brightness( Mat matrice, 
 					float alpha, float beta ){
