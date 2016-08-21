@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 #TODO: gvoice Credentials
 #TODO: server IP address & login => scp script
@@ -26,8 +26,8 @@ function build_scp_script(){
 }
 
 function generate_ssh_key(){
-	email_address=$2
-	password=$3
+	local email_address=$2
+	local password=$3
 
 	
 	ssh_key_gen_exists=`which ssh-keygen`
@@ -57,3 +57,5 @@ function build_project(){
 
 	make
 }
+
+build_project
