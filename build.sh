@@ -49,6 +49,9 @@ function build_project(){
 		cd $BUILDROOT_DIR
 		make ${CUSTOM_DEFCONFIG[0]}
 		make
+		echo "image has been built"
+		echo "install $BUILDROOT_DIR/output/images/{am335x-bone.dtb,MLO,u-boot.img,uEnv.txt,zImage} onto sdb1 (FAT16)"
+		echo "then sudo dd if=$BUILDROOT_DIR/output/images/rootfs.ext4 /dev/sdb2 (EXT4)"
 		cd ..
 	fi;
 
