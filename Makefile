@@ -1,4 +1,3 @@
-USE_OPENCV=Yes
 USE_GOOGLE_VOICE=No
 
 BUILDROOT_DIR = buildroot
@@ -16,33 +15,25 @@ OBJ = main
 
 SRCS = Sensors/mcp3008/spi.c
 SRCS += Sensors/mcp3008/mcp3008.c
+SRCS += Sensors/tsl256x/i2c.c
+SRCS += Sensors/tsl256x/tsl256x.c
+SRCS += OpenCV/opencv_lib.cpp
 
 CFLAGS = -O3 -Wall
+CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
+
+LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
+LDFLAGS += -lopencv_core -lopencv_imgproc -lopencv_objdetect
+LDFLAGS += -lopencv_video -lopencv_videoio -lopencv_highgui
 
 ifeq ($(USE_GOOGLE_VOICE),Yes)
 CFLAGS += -DUSE_GOOGLE_VOICE
 
-LDFLAGS = -lcurl
+LDFLAGS += -lcurl
 LDFLAGS += -lboost_regex
 
 SRCS += GoogleVoice/gvoice.cpp
 SRCS += GoogleVoice/send_text.cpp
-endif
-
-ifeq ($(USE_OPENCV),Yes)
-CFLAGS += -DUSE_OPENCV
-CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
-
-LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
-LDFLAGS += -lopencv_core
-LDFLAGS += -lopencv_imgproc
-LDFLAGS += -lopencv_video
-LDFLAGS += -lopencv_objdetect
-LDFLAGS += -lopencv_videoio
-LDFLAGS += -lopencv_imgproc
-LDFLAGS += -lopencv_highgui
-
-SRCS += OpenCV/opencv_lib.cpp
 endif
 
 LDFLAGS += -lm
