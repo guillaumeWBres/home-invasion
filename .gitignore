@@ -7,3 +7,5 @@ scp_to_server.sh
 BaseStation/buildroot
 BaseStation/GoogleVoice/.gvoice
 BaseStation/main
+
+Node/main
