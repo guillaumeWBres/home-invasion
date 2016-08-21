@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <avr/io.h>
 #include <util/delay.h>
-#include "lcd.h"
 #include "adc.h"
-#include "userInterface.h"
+
+#define setbit(x,y) x |= _BV(y)
+#define clearbit(x,y) x &= ~(_BV(y))
+#define togglebit(x,y) x ^= _BV(y)
+#define is_high(x,y) ((x & _BV(y)) == _BV(y))
+#define is_low(x,y) ((x & _BV(y)) == 0)
+
+#define SYSTEM_LED 0x00
 
 //TODO
 // select arch:
