@@ -13,11 +13,7 @@ CXX = $(BUILDROOT_CROSS_COMPILE)-g++
 
 OBJ = main
 
-SRCS = Sensors/mcp3008/spi.c
-SRCS += Sensors/mcp3008/mcp3008.c
-SRCS += Sensors/tsl256x/i2c.c
-SRCS += Sensors/tsl256x/tsl256x.c
-SRCS += OpenCV/opencv_lib.cpp
+SRCS = OpenCV/opencv_lib.cpp
 
 CFLAGS = -O3 -Wall
 CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
