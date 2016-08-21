@@ -1,7 +1,7 @@
 #include <avr/io.h>
 #include "adc.h"
 
-void avr_adc_init( void ){
+void avr_init_adc( void ){
 	ADCSRA = _BV(ADEN) | _BV(ADPS2); // ADC prescaler FCPU/16
 }	
 

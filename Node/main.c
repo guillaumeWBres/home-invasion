@@ -28,12 +28,11 @@
 // un compteur demarre a la mise sous tension
 // et authorise le syst. apres 5min
 
-
 void avr_init_platform(void);
 void avr_init_gpio(void);
 
 int main(void){
-	avr_platform_init();
+	avr_init_platform();
 
 	for(;;){
 		
@@ -49,7 +48,7 @@ void avr_init_platform( void ){
 	setbit( PORTB, SYSTEM_LED );
 }
 
-void avr_init_gpio(void){
+void avr_init_gpio( void ){
 	DDRD = 0x00;
 	DDRB = 0xff;
 }
