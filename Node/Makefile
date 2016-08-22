@@ -25,6 +25,7 @@ CFLAGS += -mmcu=$(MCU)
 CFLAGS += -DF_CPU=$(FMCU_HZ)UL
 
 SRCS = adc.c
+SRCS += i2c.c
 
 all: $(TARGET)
 
