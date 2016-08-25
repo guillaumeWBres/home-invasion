@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Buildroot 2016.08-rc2-00001-g3975019 Configuration
+# Buildroot 2016.08-rc2-00059-g9694305 Configuration
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_HOST_GCC_AT_LEAST_4_6=y
@@ -319,7 +319,7 @@ BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_DEVTMPFS=y
 BR2_ROOTFS_DEVICE_TABLE="system/device_table.txt"
 # BR2_ROOTFS_DEVICE_TABLE_SUPPORTS_EXTENDED_ATTRIBUTES is not set
 BR2_TARGET_ENABLE_ROOT_LOGIN=y
-BR2_TARGET_GENERIC_ROOT_PASSWD=""
+BR2_TARGET_GENERIC_ROOT_PASSWD="ROOT"
 BR2_SYSTEM_BIN_SH_BUSYBOX=y
 
 #
@@ -2125,7 +2125,7 @@ BR2_PACKAGE_XUTIL_UTIL_MACROS=y
 # BR2_PACKAGE_CONNMAN is not set
 
 #
-# connman-gtk needs libgtk3 and a toolchain w/ wchar, threads, resolver, dynamic library
+# connman-gtk needs libgtk3 and a glibc or uClibc toolchain w/ wchar, threads, resolver, dynamic library
 #
 # BR2_PACKAGE_CONNTRACK_TOOLS is not set
 # BR2_PACKAGE_CRDA is not set
