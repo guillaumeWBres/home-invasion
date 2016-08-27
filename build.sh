@@ -5,57 +5,55 @@
 #TODO: ssh-key gen accept password
 #TODO: SSH key with server IP => usermod / file perm
 
-SUPPORTED_ARCH=("beaglebone")
-CUSTOM_DEFCONFIG=("bbone_defconfig")
+SUPPORTED_ARCHITECTURES=("beaglebone")
+CUSTOM_DEFCONFIGS=("bbone_defconfig")
 
-BUILDROOT_DIR=buildroot
-BUILDROOT_CONFIG_DIR=buildroot/configs
+GIT_DIR=`pwd`
+BASE_STATION_DIR=$GIT_DIR/BaseStation
+NOSE_STATION_DIR=$GIT_DIR/Node
 
-DEFAULT_VIDEO_FILE="detection.avi"
-DEFAULT_SCP_SCRIPT="scp_to_server.sh"
+BUILDROOT_GIT_URL=https://github.com/buildroot/buildroot.git
+BUILDROOT_DIR=$BASE_STATION_DIR/buildroot
+BUILDROOT_CONFIG_DIR=$BUILDROOT_DIR/configs
+BUILDROOT_BOARD_DIR=$BUILDROOT_DIR/board
+BUILDROOT_OUTPUT_DIR=$BUILDROOT_DIR/output
+BUILDROOT_IMAGE_DIR=$BUILDROOT_OUTPUT_DIR/images
+BUILDROOT_OVERLAY_DIR=$BASE_STATION_DIR/overlay
+		
+AVR_REQUIRED_PACKAGES=("arduino" "arduino-core" "arduino-mk")
 
-function print_help(){
-	echo -e "This script builds the application,
-	supported architectures: ${SUPPORTED_ARCH[@]}."
-}
-
-function build_scp_script(){
-	server_ip_address=$1
-	login_to_server=$2
-	echo "scp $DEFAULT_VIDEO_FILE $login_to_server@$server_ip_address" >> $DEFAULT_SCP_SCRIPT
-}
-
-function generate_ssh_key(){
-	local email_address=$2
-	local password=$3
-
-	
-	ssh_key_gen_exists=`which ssh-keygen`
-	if [[ -z "$ssh_key_gen_exists" ]]; then
-		sudo apt-get install ssh
+function install_buildroot(){
+	if [ ! -e $BUILDROOT_DIR ]; then
+		cd $BASE_STATION_DIR
+		git clone $BUILDROOT_GIT_URL 
+		cd $GIT_DIR
 	fi;
-
-	ssh-keygen -t rsa -C "$email_address"
 }
 
-function build_project(){
-
-	if [ ! -e buildroot ]; then # buildroot non installe'
-		git clone https://github.com/buildroot/buildroot.git
-	fi;
-
-	if [ ! -e buildroot/output/images/MLO ]; then # image non construite
+function build_embedded_os(){_
+	if [ ! -e $BUILDROOT_IMAGE_DIR/MLO ]; then
 		cp ${CUSTOM_DEFCONFIG[0]} $BUILDROOT_CONFIG_DIR 
-		cd $BUILDROOT_DIR
-		make ${CUSTOM_DEFCONFIG[0]}
-		make
-		echo "image has been built"
-		echo "install $BUILDROOT_DIR/output/images/{am335x-bone.dtb,MLO,u-boot.img,uEnv.txt,zImage} onto sdb1 (FAT16)"
-		echo "then sudo dd if=$BUILDROOT_DIR/output/images/rootfs.ext4 /dev/sdb2 (EXT4)"
-		cd ..
-	fi;
+		make -C $CUSTOM_DEFCONFIG
+		make -C $BUILDROOT_DIR
 
-	make
+		echo "image has been built, install it with:"
+		echo "sudo dd if=$BUILDROOT_DIR/output/images/sdcard.img of=dev/sdc"
+	fi;
 }
 
-build_project
+function test_avr_gcc(){
+	avr_cc_exists=`which avr-gcc`
+	if [[ -z "$avr_cc_exists" ]]; then
+		sudo apt-get install ${AVR_REQUIRED_PACKAGES[@]}
+	fi;
+}
+
+ARCH=beaglebone
+CUSTOM_DEFCONFIG=bbone_defconfig
+
+install_buildroot
+build_embedded_os
+make -C $BASE_STATION_DIR
+
+test_avr_gcc
+make -C $NODE_STATION_DIR
