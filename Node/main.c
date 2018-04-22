@@ -6,15 +6,18 @@
 
 #include "xbee.h"
 
-#define MIC 	BIT5 // P1.5
-
 char status[16];
+
+#define MIC 	BIT5 // P1.5
 
 #define TA1_MOD  13733
 volatile int ta1_count;
 
 #define WDT_MOD	0xffff
 volatile int wdt_count;
+
+volatile int pVal;
+#define DER_THRESH	(1024/10) // 10% variation will trigger	
 
 void adc_init(void);
 void uart_init(void);
@@ -47,13 +50,19 @@ void adc_init(void){
 	ADC10CTL0 |= ADC10IE; // ISR
 	ADC10CTL0 |= ADC10ON; // ON
 
-	ADC10CTL1 = INCH_5; // P1.5
 	P1SEL |= MIC;
+	ADC10CTL1 = INCH_5; // P1.5
 	ADC10AE0 |= MIC;
+
+	ADC10CTL1 &= ~ADC10DF; // unsigned for thresh. validity
 	
 	//ADC10CTL1 |= CONSEQ_2; // repeat single chan 
 	//ADC10CTL1 |= SHS_1; // triggered by TA0
 	//ADC10CTL1 |= ADC10DIV_3; // ACLK/3
+
+	ADC10CTL0 |= ENC + ADC10SC; // 1st start
+	while (ADC10CTL1 & ADC10BUSY);
+	pVal = ADC10MEM;
 }
 
 void timers_init(void){
@@ -73,10 +82,21 @@ void timers_init(void){
 
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void CCR0_ISR(void){
-	ADC10CTL0 |= ENC + ADC10SC; // sampling+start
-	//while (ADC10CTL1 & ADC10BUSY);
-	sprintf(status, "sts: %d\r\n", ADC10MEM);
-	xbee_send_base(status);
+	int nVal, der;
+	ADC10CTL0 |= ENC + ADC10SC; 
+	while (ADC10CTL1 & ADC10BUSY);
+	nVal = ADC10MEM;
+
+	der = nVal-pVal;
+	if (der < 0)
+		der *= (-1);
+
+	if (der > 100){
+		sprintf(status, "major: %d\r\n", der);
+		xbee_send_base(status);
+	}
+	
+	pVal = nVal; 
 	TA0R = 0;	
 }
 
