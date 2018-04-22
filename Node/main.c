@@ -1,54 +1,107 @@
 #include <stdio.h>
-#include <stdint.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include "adc.h"
+#include <stdlib.h>
+#include <string.h>
 
-#define setbit(x,y) x |= _BV(y)
-#define clearbit(x,y) x &= ~(_BV(y))
-#define togglebit(x,y) x ^= _BV(y)
-#define is_high(x,y) ((x & _BV(y)) == _BV(y))
-#define is_low(x,y) ((x & _BV(y)) == 0)
+#include <msp430g2553.h>
 
-#define SYSTEM_LED 0x00
+#include "xbee.h"
 
-//TODO
-// select arch:
-//  il faut 4 ports analogiques
-//  il faut 1 port i2c 
+#define MIC 	BIT5 // P1.5
 
-//TODO
-// IRQ sur capteur sound analog0 (compare value)
-// IRQ sur capteur sound analog1 (compare value)
-// IRQ sur capteur PIR (compare value)
-// IRQ sur capteur IR (compare value ou autre)
+char status[16];
 
-// chaque IRQ declenche une command I2C vers $HOST
+#define TA1_MOD  13733
+volatile int ta1_count;
 
-// un compteur demarre a la mise sous tension
-// et authorise le syst. apres 5min
+#define WDT_MOD	0xffff
+volatile int wdt_count;
 
-void avr_init_platform(void);
-void avr_init_gpio(void);
+void adc_init(void);
+void uart_init(void);
+void timers_init(void);
+void platform_init(void);
 
 int main(void){
-	avr_init_platform();
-
-	for(;;){
-		
-	}
-
+	platform_init();
+	while(1);
 	return 0;
 }
 
-void avr_init_platform( void ){
-	avr_init_gpio();
-	avr_init_adc();
-	
-	setbit( PORTB, SYSTEM_LED );
+void platform_init(void){
+	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) while(1);
+	BCSCTL1 = CALBC1_1MHZ;
+	DCOCTL = CALDCO_1MHZ;
+	WDTCTL = WDTPW + WDTHOLD;
+
+	adc_init();
+	timers_init();
+	xbee_init();
+
+	_BIS_SR(GIE);
+	xbee_send_base("node 0 up\r\n");
 }
 
-void avr_init_gpio( void ){
-	DDRD = 0x00;
-	DDRB = 0xff;
+void adc_init(void){
+	ADC10CTL0 = SREF_0; // VCC/VSS as ref.
+	ADC10CTL0 |= ADC10SHT_1; // Sample and hold for 8 clock cycles
+	ADC10CTL0 |= ADC10IE; // ISR
+	ADC10CTL0 |= ADC10ON; // ON
+
+	ADC10CTL1 = INCH_5; // P1.5
+	P1SEL |= MIC;
+	ADC10AE0 |= MIC;
+	
+	//ADC10CTL1 |= CONSEQ_2; // repeat single chan 
+	//ADC10CTL1 |= SHS_1; // triggered by TA0
+	//ADC10CTL1 |= ADC10DIV_3; // ACLK/3
 }
+
+void timers_init(void){
+	TACTL |= MC_0; // stop
+	TACTL = TASSEL_2 + ID_2 + TAIE; // SMCLK
+	
+	// TA0: AN. conversion
+	TA0R = 0;
+	CCR0 = 0xff;
+	CCTL0 |= CCIE; // CCR0 IE
+
+	// TA1: 15 min status report
+	TA1R = 0;
+	CCR1 = 0xffff;
+	TACTL |= MC_2; // continuous op. mode
+}
+
+#pragma vector = TIMER0_A0_VECTOR
+__interrupt void CCR0_ISR(void){
+	ADC10CTL0 |= ENC + ADC10SC; // sampling+start
+	//while (ADC10CTL1 & ADC10BUSY);
+	sprintf(status, "sts: %d\r\n", ADC10MEM);
+	xbee_send_base(status);
+	TA0R = 0;	
+}
+
+#pragma vector = TIMER0_A1_VECTOR
+__interrupt void CCR1_ISR(void){
+	if (ta1_count == TA1_MOD-1){
+		// xbee_status_report();
+		ta1_count = 0;
+	} else
+		ta1_count++;
+
+	TA0R = 0;
+}
+
+/* WDT is enabled on orders received by BS
+	monitors activity: goes back to hibernation
+	if no activity detected
+
+#pragma vector = WDT_VECTOR
+__interrupt void watchdog_timer(void){
+	if (wdt_count == WDT_MOD-1){
+		_BIS_SR(LPM3_bits + GIE); // LPM3 hibernation from now on
+		WDTCTL = WDTPW + WDTHOLD; // kill WDT
+		wdt_cont = 0;
+	} else
+		wdt_cont++;
+}
+*/

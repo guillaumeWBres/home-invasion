@@ -1,39 +1,17 @@
-MCU = atmega2561
-FMCU_HZ = 4000000
+MSPDIR ?= /usr/bin
+CC = $(MSPDIR)/msp430-gcc
 
-TARGET = main
+MCU = msp430g2553
 
-CC = avr-gcc
-CXX = avr-g++
-CPP = avr-cpp
-LD = avr-ld
-NM = avr-nm
-AR = avr-ar
-AS = avr-as
-SIZE = avr-size
-OBJCOPY = avr-objcopy
-OBJDUMP = avr-objdump
+CFLAGS = -0s -Wall -g -mmcu=$(MCU)
 
-CFLAGS = -funsigned-char 
-CFLAGS += -funsigned-bitfields 
-CFLAGS += -fpack-struct 
-CFLAGS += -fshort-enums
-CFLAGS += -Wall -Wstrict-prototypes
-CFLAGS += -O3
-CFLAGS += -std=gnu99
-CFLAGS += -mmcu=$(MCU) 
-CFLAGS += -DF_CPU=$(FMCU_HZ)UL
+OBJ = main
+SRCS = xbee.c
 
-SRCS = adc.c
-SRCS += i2c.c
+RM = rm -rf
 
-all: $(TARGET)
-
-$(TARGET): $(TARGET).c
-	$(CC) $(TARGET).c $(SRCS) $(CFLAGS) -o $(TARGET)
-
-install: $(TARGET)
-	sudo avrdude -q -V -D -p$(MCU) -P/dev/ttyUSB0 -c arduino -U flash:w:$(TARGET)
+$(OBJ): $(OBJ).c
+	$(CC) $(CFLAGS) $(OBJ).c -o $(OBJ).elf $(SRCS)
 
 clean:
-	rm $(TARGET)
+	$(RM) $(OBJ).elf
