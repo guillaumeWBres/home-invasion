@@ -46,4 +46,23 @@ def read_xbee_settings(tty, baud):
 
 	ser.close()
 
-read_xbee_settings(sys.argv[1],sys.argv[2])
+def main(argv):
+	argv=argv[1:]
+	if (len(argv) == 0):
+		print("./tools --port=p --baud=b")
+		return 0
+	
+	else:
+		for arg in argv:
+			key = arg.split("=")[0]
+			value = arg.split("=")[-1]
+			if key == "--port":
+				tty = value
+			elif key == "--baud":
+				baud = value
+			else:
+				print("Unknown flag {:s}".format(key))
+
+	read_xbee_settings(tty,baud)
+
+main(sys.argv)
