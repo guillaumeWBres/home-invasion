@@ -37,7 +37,7 @@ int main(int argc, char **argv){
 
 	coordinator.setSettings("/dev/ttyUSB0", 
 		"1234", "5678", 
-			"0", "0", // broadcast settings are default for coord.
+			"0", "FFFF", // broadcast settings are default for coord.
 				128
 	);
 
@@ -45,6 +45,4 @@ int main(int argc, char **argv){
 
 	return 0;
 	//network.to_csv("test.csv");
-	
-	return 0;
 }
