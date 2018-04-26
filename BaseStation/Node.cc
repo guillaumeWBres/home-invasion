@@ -133,19 +133,18 @@ int Node::broadcast(const char *tty, const char *payload){
 		printf("Failed to open %s port\n", tty);
 		return -1;
 	}
-/*
-	if (send_command(fd, "+++", 3) < 0)
-		return -1;
-
-	if (send_command(fd, "ATDH0\r", 6) < 0)
-		return -1;
 	
-	if (send_command(fd, "ATDLFFFF\r", 9) < 0)
-		return -1;
+	if ((getATDH() != "0")||(getATDL() != "FFFF")){
+		// enter CMD mode
+		send_command(fd, "+++");
+		// set broadcast ADDR
+		send_command(fd, "ATDH0\r");
+		send_command(fd, "ATDLFFFF\r");
+		// we're done
+		send_command(fd, "ATWR\r");
+		send_command(fd, "ATCN\r");
+	}
 
-	if (send_command(fd, "ATCN\r", 5) < 0)
-		return -1;
-*/
 	size = write(fd, payload, strlen(payload));
 	close(fd);
 	return size; 
