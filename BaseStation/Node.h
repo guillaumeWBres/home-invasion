@@ -34,8 +34,11 @@ public:
 	// returns ATBD value (baud rate)
 	int getATBD(void);
 
-	// returns ATCT value (CMD dead time)
+	// returns ATCT value (CMD mode timeout)
 	int getATCT(void);
+
+	// returns ATGT value (CMD gard time)
+	int getATGT(void);
 
 	// serializes self in .csv format
 	// indent: current indentation level
@@ -49,6 +52,11 @@ public:
 	uint8_t isRouter(void);
 	uint8_t isEndDevice(void);
 	uint8_t getNetworkRole(void);
+
+	// sends required message as unicast
+	// returns -1 in case of failure
+	// returns size_t otherwise
+	int unicast(const char *tty, const char *dh, const char *dl, const char *payload);
 
 	// broadcasts message over the network
 	// returns -1 in case of failure
@@ -84,10 +92,10 @@ public:
 	int setSettings(const char *tty, 
 		const char *ID, const char *MY, 
 			const char *DH, const char *DL, 
-				int CT
+				int CT, int GT
 	);
 
-	int send_API_frame(void);
+	int send_API_frame(const uint16_t size);
 
 private:
 	// role within network
@@ -97,8 +105,9 @@ private:
 	std::string _ATID; // PAN / Network ID
 	std::string _ATMY; // self ADDR
 	std::string _ATDL, _ATDH; // dest ADDR
-	int _ATCT; // CMD dead time
 	int _ATBD; // Baud rate
+	int _ATCT; // CMD dead time
+	int _ATGT; // AT CMD gard time
 
 	void _setATID(std::string id);
 	void _setATMY(std::string my);
@@ -106,7 +115,10 @@ private:
 	void _setATDH(std::string dh);
 	void _setATCT(int ct);
 	void _setATBD(int bd);
-	
+	void _setATGT(int gt);
+
+	// evaluates checksum of current API frame 
+	uint8_t _checksum(const char *APIframe);
 };
 
 #endif
