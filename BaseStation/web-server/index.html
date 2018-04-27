@@ -7,6 +7,34 @@
 			margin: 0 auto;
 			font-family: Tahoma, Verdana, Arial, sans-serif;
 		}
+		
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		th {
+			background: #333;
+			color: white;
+			font-weight: bold;
+			cursor: s-resize;
+			background-repeat: no-repeat;
+			background-position: 3% center;
+		}
+
+		td, th {
+			padding: 6px;
+			border: 1px solid #ccc;
+			text-align: left;
+		}
+
+		th.des:after {
+			content: "\21E9";
+		}
+
+		th.aes:after {
+			content: "\21E7";
+		}
 	</style>
 	
 	<script charset="utf-8" src="d3/d3.min.js"></script>
@@ -14,10 +42,10 @@
 	<head>
 		<h1> Welcome! </h1>
 		
-		<svg width="720" height="120">
-		  	<circle cx="40" cy="60" r="10"></circle>
-		   <circle cx="80" cy="60" r="10"></circle>
-			<circle cx="120" cy="60" r="10"></circle>
+		<svg width="500" height="20">
+		  	<circle cx="10" cy="10" r="10"></circle>
+		   <circle cx="80" cy="10" r="10"></circle>
+			<circle cx="150" cy="10" r="10"></circle>
 		</svg>
 		
 	</head>
@@ -26,12 +54,48 @@
 		<p> Test paragraph </p>
 		<a href="http://github.com/gwbres/home-automation">project-sources</a>
 		<p> <em>Work in progress</em> </p>
-		<?php echo "test"; ?>
-		
+		<?php echo "test php CMD"; ?>
+
 		<script>
+			// test JS attribute modifications
 			var circle = d3.selectAll("circle");
 			circle.style("fill", "steelblue");
 		</script>
-	</body>
 
+		<! test table>
+		<table>
+			<tr>
+				<th>Node</th>
+				<th>Status</th>
+			</tr>
+			<tr>
+				<td>Base</td>
+				<td>OK</td>
+			</tr>
+		</table>
+
+		<p> Sleep mode control </p>
+		<form>
+			<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
+			<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
+			<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
+			<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
+		</form>
+
+		<form method="POST" id="PANIDform"></form>
+		<form method="POST" id="BaseNIDform"></form>
+
+		<p> Network control </p>
+		<table>
+			<tr>
+				<th> PAN (Network) ID </th>
+				<th> Base station ID </th>
+			</tr>
+			<tr>
+				<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
+				<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
+			</tr>
+		</table>
+
+	</body>
 </html>
