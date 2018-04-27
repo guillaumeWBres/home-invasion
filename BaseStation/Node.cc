@@ -274,6 +274,25 @@ int Node::setSettings(const char *tty,
 	return -1;
 }
 
+int Node::send_API_frame(const uint16_t size){
+	char frame[64];
+	int _offset = 0;
+	uint8_t MSB, LSB;
+	strcpy(frame+0, 0x7E, 1);
+	MSB = (size>>4)&0x0F;
+	LSB = (size)&0x0F;
+	strcpy(frame+1, MSB, 2);
+	strcpy(frame+3, LSB, 2);
+}
+
+uint8_t Node::_checksum(const char *frame){
+	int sum = 0;
+	for (int i=2; i<strlen(frame); i++)
+		sum += frame[i];
+	sum &= 0xFF;
+	return (uint8_t)(0xFF-sum);
+}
+
 std::string Node::getATID(void){
 	return _ATID;
 }

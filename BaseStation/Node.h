@@ -87,6 +87,8 @@ public:
 				int CT
 	);
 
+	int send_API_frame(void);
+
 private:
 	// role within network
 	uint8_t _role;
