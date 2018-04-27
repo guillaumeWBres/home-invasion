@@ -38,7 +38,7 @@ int main(int argc, char **argv){
 	coordinator.setSettings("/dev/ttyUSB0", 
 		"1234", "5678", 
 			"0", "FFFF", // broadcast settings are default for coord.
-				128
+				32, 10
 	);
 
 	coordinator.print(); 
