@@ -45,12 +45,7 @@ public:
 	// returns size of vector list
 	int getNetworkEndDevices(vector<Node> &nodes);
 
-	int configureNetworkCoordinator(const char *tty, 
-		const char *ATID,
-		const char *ATMY,
-		int joinTime
-	);
-
+	int scan(void);
 private:
 
 	vector<Node> nodes;
