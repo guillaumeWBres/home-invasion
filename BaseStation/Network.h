@@ -30,12 +30,6 @@ public:
 	// returns ith element in network
 	int getNode(Node &n, int i);
 
-	// returns 1 if network uses encryption
-	uint8_t encryption(void);
-
-	// enables/disables network encryption
-	void setEncryption(uint8_t enc);
-
 	// locates network coordinator within network
 	// returns -1 if not found
 	// returns [i] where i is position within network list
@@ -45,11 +39,12 @@ public:
 	// returns size of vector list
 	int getNetworkEndDevices(vector<Node> &nodes);
 
-	int scan(void);
-private:
+	// discovers all devices over this network 
+	int discoverDevices(const char *tty);
 
+private:
+	
 	vector<Node> nodes;
-	uint8_t _encryption; 
 
 };
 

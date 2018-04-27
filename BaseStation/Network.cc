@@ -67,14 +67,6 @@ int Network::to_csv(const char *fp){
 	return 0;
 }
 
-void Network::setEncryption(uint8_t enc){
-	_encryption = enc;
-}
-
-uint8_t Network::encryption(void){
-	return _encryption;
-}
-
 int Network::getNetworkCoordinator(Node &n){
 	for (int i=0; i<size(); i++){
 		if (nodes[i].isCoordinator()){
@@ -93,4 +85,48 @@ int Network::getNetworkEndDevices(vector<Node> &nodes){
 	}
 	nodes = result;
 	return result.size();
+}
+
+int Network::discoverDevices(const char *tty){
+	int fd;
+	Node n;
+	int size = 0;
+	char c, buffer[1024];
+
+	fd = open(tty, O_RDWR);
+	if (fd < 0){
+		printf("Failed to open %s port\n", tty);
+		return -1;
+	}
+	
+	getNetworkCoordinator(n);
+	n.send_command(fd, "+++"); // CMD
+	n.send_command(fd, "ATNT50\r"); // 5 sec discovery timeout
+	n.send_command(fd, "ATAC\r");
+	n.send_command(fd, "ATND%s\r"); // Network discovery
+	
+	while (1){
+		read(fd, &c, 1);
+		buffer[size] = c;
+		
+		if (c == '\r'){
+			if (buffer[size-1] == '\r'){
+				break;
+			}
+		}
+
+		if (size == 1024-1){
+			size = 0;
+		} else
+			size ++;
+
+		// parsing:
+		// MY<CR>
+		// SH<CR>
+		// SL<CR>
+		// ...
+		// ID<CR><CR>
+	}
+
+	return 0;
 }
