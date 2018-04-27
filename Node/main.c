@@ -6,9 +6,7 @@
 
 #include "xbee.h"
 
-char status[16];
-
-#define MIC 	BIT5 // P1.5
+char status[64];
 
 #define TA1_MOD  13733
 volatile int ta1_count;
@@ -17,7 +15,12 @@ volatile int ta1_count;
 volatile int wdt_count;
 
 volatile int pVal;
-#define DER_THRESH	(1024/10) // 10% variation will trigger	
+volatile uint8_t debouncing;
+volatile int dbc_count;
+#define DER_THRESH	(1024/10) // 10% variation will trigger
+#define LED		BIT0 // P1.0: debouncer
+#define MIC 	BIT5 // P1.5: AN
+#define DEBOUNCE_LIM	0xffff
 
 void adc_init(void);
 void uart_init(void);
@@ -41,7 +44,6 @@ void platform_init(void){
 	xbee_init();
 
 	_BIS_SR(GIE);
-	xbee_send_base("node 0 up\r\n");
 }
 
 void adc_init(void){
@@ -53,16 +55,16 @@ void adc_init(void){
 	P1SEL |= MIC;
 	ADC10CTL1 = INCH_5; // P1.5
 	ADC10AE0 |= MIC;
-
 	ADC10CTL1 &= ~ADC10DF; // unsigned for thresh. validity
 	
-	//ADC10CTL1 |= CONSEQ_2; // repeat single chan 
-	//ADC10CTL1 |= SHS_1; // triggered by TA0
-	//ADC10CTL1 |= ADC10DIV_3; // ACLK/3
-
 	ADC10CTL0 |= ENC + ADC10SC; // 1st start
 	while (ADC10CTL1 & ADC10BUSY);
 	pVal = ADC10MEM;
+	debouncing &= 0x00;
+	dbc_count = 0;
+
+	P1DIR |= LED;
+	P1OUT &= 0x00;
 }
 
 void timers_init(void){
@@ -71,7 +73,7 @@ void timers_init(void){
 	
 	// TA0: AN. conversion
 	TA0R = 0;
-	CCR0 = 0xff;
+	CCR0 = 0xfff;
 	CCTL0 |= CCIE; // CCR0 IE
 
 	// TA1: 15 min status report
@@ -83,21 +85,37 @@ void timers_init(void){
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void CCR0_ISR(void){
 	int nVal, der;
-	ADC10CTL0 |= ENC + ADC10SC; 
-	while (ADC10CTL1 & ADC10BUSY);
-	nVal = ADC10MEM;
 
-	der = nVal-pVal;
-	if (der < 0)
-		der *= (-1);
+	if (debouncing){
+		P1OUT |= LED;
 
-	if (der > 100){
-		sprintf(status, "major: %d\r\n", der);
-		xbee_send_base(status);
-	}
+		if (dbc_count == DEBOUNCE_LIM){
+			dbc_count = 0;
+			debouncing &= 0x00;
+			ADC10CTL0 |= ENC + ADC10SC;
+			while (ADC10CTL1 & ADC10BUSY);
+			pVal = ADC10MEM;
+			P1OUT &= ~LED;
+		} else
+			dbc_count++;
+
+	} else {
+
+		ADC10CTL0 |= ENC + ADC10SC; 
+		while (ADC10CTL1 & ADC10BUSY);
+		nVal = ADC10MEM;
+
+		der = nVal-pVal;
+		if (der < 0) der *= (-1); // |abs|: only care about changes
+
+		if (der >= DER_THRESH){
+			sprintf(status, "major: %d\r\n", der);
+		}
 	
-	pVal = nVal; 
-	TA0R = 0;	
+		pVal = nVal; 
+	}
+
+	TA0R = 0;
 }
 
 #pragma vector = TIMER0_A1_VECTOR
