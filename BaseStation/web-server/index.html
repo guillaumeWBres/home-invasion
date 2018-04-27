@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+	<style>
+		body {
+			width: 35em;
+			margin: 0 auto;
+			font-family: Tahoma, Verdana, Arial, sans-serif;
+		}
+	</style>
+	
+	<script charset="utf-8" src="d3/d3.min.js"></script>
+		
+	<head>
+		<h1> Welcome! </h1>
+		
+		<svg width="720" height="120">
+		  	<circle cx="40" cy="60" r="10"></circle>
+		   <circle cx="80" cy="60" r="10"></circle>
+			<circle cx="120" cy="60" r="10"></circle>
+		</svg>
+		
+	</head>
+	
+	<body>
+		<p> Test paragraph </p>
+		<a href="http://github.com/gwbres/home-automation">project-sources</a>
+		<p> <em>Work in progress</em> </p>
+		<?php echo "test"; ?>
+		
+		<script>
+			var circle = d3.selectAll("circle");
+			circle.style("fill", "steelblue");
+		</script>
+	</body>
+
+</html>
