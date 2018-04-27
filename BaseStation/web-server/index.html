@@ -42,27 +42,11 @@
 	<head>
 		<h1> Welcome! </h1>
 		
-		<svg width="500" height="20">
-		  	<circle cx="10" cy="10" r="10"></circle>
-		   <circle cx="80" cy="10" r="10"></circle>
-			<circle cx="150" cy="10" r="10"></circle>
-		</svg>
 		
 	</head>
 	
 	<body>
-		<p> Test paragraph </p>
-		<a href="http://github.com/gwbres/home-automation">project-sources</a>
-		<p> <em>Work in progress</em> </p>
-		<?php echo "test php CMD"; ?>
-
-		<script>
-			// test JS attribute modifications
-			var circle = d3.selectAll("circle");
-			circle.style("fill", "steelblue");
-		</script>
-
-		<! test table>
+		<p> Network status </p>
 		<table>
 			<tr>
 				<th>Node</th>
@@ -96,6 +80,61 @@
 				<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
 			</tr>
 		</table>
+
+		<p> Network display </p>
+		<div id="networkdiv"></div>
+		
+		<script>
+			// draw circles
+			var svgContainer = d3.select("body").append("svg")
+				.attr("width",500)
+				.attr("height",500);
+			
+			var nodeCircle1 = svgContainer.append("circle")
+				.attr("cx",10)
+				.attr("cy",10)
+				.attr("r",10)
+			
+			var nodeCircle1 = svgContainer.append("circle")
+				.attr("cx",200)
+				.attr("cy",10)
+				.attr("r",10)
+
+			var baseCircle = svgContainer.append("circle")
+				.attr("cx",100)
+				.attr("cy",100)
+				.attr("r",10)
+			
+			var l01 = svgContainer.append("line")
+				.attr("x1",100)
+				.attr("y1",100)
+				.attr("x2",10)
+				.attr("y2",10)
+				.attr("stroke-width", 2)
+				.attr("stroke", "black");
+			
+			var l01 = svgContainer.append("line")
+				.attr("x1",100)
+				.attr("y1",100)
+				.attr("x2",200)
+				.attr("y2",10)
+				.attr("stroke-width", 2)
+				.attr("stroke", "black");
+
+			// https://www.dashingd3js.com/svg-paths-and-d3js
+
+
+			// JS: modify all "circles" attributes contained in doc
+			//	var circle = d3.selectAll("circle");
+			//	circle.style("fill", "steelblue");
+			// data from JSON/CSV
+		</script>
+
+		<p>
+			<em>Work in progress</em>
+			<a href="http://github.com/gwbres/home-automation">project-sources</a>
+		</p>
+		
 
 	</body>
 </html>
