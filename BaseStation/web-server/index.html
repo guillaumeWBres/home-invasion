@@ -13,15 +13,22 @@
 
 		.calendarColumn {
 			float: right;
-			padding: 20px;
+			padding: 10px;
 			text-align: center;
-			width: 45%;
+			width: 35%
 			margin-top: 10px;
 			margin-bottom: 10px;
 		}
+
+		.calendarCardEffect {
+			border-radius: 10px;
+			border: 2px black solid;
+			padding: 10px;
+			margin-top: 0;
+		}
 		
 		#calendar {
-			max-width: 500px;
+			max-width: 400px;
 			margin: 0 auto;
 		}
 
@@ -29,12 +36,11 @@
 			border-radius: 10px;
 			border: 2px black solid;
 			padding: 5px;
-			margin-top: 1px;
 		}
 
 		.networkColumn {
 			float: left;
-			width: 50%;
+			width: 55%;
 		}
 
 		.footer {
@@ -61,8 +67,8 @@
 		table {
 			width: 40%;
 			border-collapse: collapse;
-			margin-top: 5px;
-			margin-bottom: 5px;
+			margin-top: 15px;
+			margin-bottom: 15px;
 		}
 
 		th {
@@ -116,9 +122,16 @@
 		<link rel="stylesheet" href="fullcalendar-3.9.0/fullcalendar.css"/>
 		<script src="fullcalendar-3.9.0/lib/jquery.min.js"></script>
 		<script src="fullcalendar-3.9.0/lib/moment.min.js"></script>
-		<script src="fullcalendar-3.9.0/fullcalendar.js"></script>
+		<script src="fullcalendar-3.9.0/fullcalendar.min.js"></script>
 		
 		<script>
+			
+			// read events
+			var request = new XMLHttpRequest();
+			request.open("GET", "events.json", false);
+			request.send(null);
+			var events = JSON.parse(request.responseText);
+
 			// initialize calendar object once page is settled
 			$(document).ready(function() {
 				$('#calendar').fullCalendar({
@@ -127,8 +140,8 @@
 						right: "",
 						center: "title",
 					},
-					defaultView: "agendaWeek",
-					navLinks: false, // weekly view only
+					defaultView: "agendaWeek", // weekly agenda only
+					navLinks: false, // remove navigation bar
 					editable: true,
 					selectable: true,
 					selectHelper: true,
@@ -139,32 +152,7 @@
 						start: '09:30', // start time
 						end: '18:00', // end time
 					},
-					events: [
-						{
-							title: "System ON",
-							color: "red",
-							start: "2018-04-26T09:00:00",
-							end: "2018-04-26T18:00:00"
-						},
-						{
-							title: "System back up",
-							color: "blue",
-							start: "2018-04-27T08:00:00",
-							end: "2018-04-27T09:00:00"
-						},
-						{
-							title: "System ON",
-							color: "red",
-							start: "2018-04-27T09:00:00",
-							end: "2018-04-27T18:00:00"
-						},
-						{
-							title: "System back up",
-							color: "blue",
-							start: "2018-04-27T18:00:00",
-							end: "2018-04-27T19:00:00"
-						},
-					],
+					events: events // read from events.json 
 				})
 			});
 		</script>
@@ -203,7 +191,7 @@
 			</table>
 
 			<div class="cardEffect">
-				<p> Sleep mode control </p>
+				<p> Power saving options </p>
 				<form>
 					<form method="POST" id="PANIDform"></form>
 					<form method="POST" id="BaseNIDform"></form>
