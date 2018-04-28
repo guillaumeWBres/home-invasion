@@ -32,7 +32,7 @@
 			margin-top: 1px;
 		}
 
-		.contentColumn {
+		.networkColumn {
 			float: left;
 			width: 50%;
 		}
@@ -59,8 +59,10 @@
 		}
 		
 		table {
-			width: 70%;
+			width: 40%;
 			border-collapse: collapse;
+			margin-top: 5px;
+			margin-bottom: 5px;
 		}
 
 		th {
@@ -174,56 +176,53 @@
 			<h1> Welcome ! </h1>
 		</div>
 
-		<div class="row">
-			<div class="leftcolumn">
-				<div class="card">
-				<p> Network status </p>
-				<table>
-					<tr>
-						<th>Node</th>
-						<th>Status</th>
-					</tr>
-					<tr>
-						<td>Base</td>
-						<td>OK</td>
-					</tr>
-				</table>
-				</div>
+		<div class="networkColumn">
+			
+			<table id="networkStatusTable">
+				<tr>
+					<th>Node</th>
+					<th>Status</th>
+				</tr>
+				<tr>
+					<td>Base</td>
+					<td>OK</td>
+				</tr>
+			</table>
+		
+			<table>
+				<tr>
+					<th> Network (PAN) ID </th>
+					<th> Base station ID </th>
+					<th> Encryption </th>
+				</tr>
+				<tr>
+					<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
+					<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
+					<td> <input type="checkbox" name="Encrypt" form="encryptFrom"/> </td>
+				</tr>
+			</table>
+
+			<div class="cardEffect">
+				<p> Sleep mode control </p>
+				<form>
+					<form method="POST" id="PANIDform"></form>
+					<form method="POST" id="BaseNIDform"></form>
+					<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
+					<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
+					<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
+					<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
+				</form>
 			</div>
-			<div class="calendarColumn">
-				<div class="cardEffect">
-					<p> Test </p>
-			<div id="calendar"></div>
-				</div>
+
+		</div>
+		
+		<div class="calendarColumn">
+			<div class="cardEffect">
+				<p> Active time zones </p>
+				<div id="calendar"></div>
 			</div>
 		</div>
 
-
-		<p> Sleep mode control </p>
-		<form>
-			<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
-			<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
-			<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
-			<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
-		</form>
-
-		<form method="POST" id="PANIDform"></form>
-		<form method="POST" id="BaseNIDform"></form>
-
-		<p>
-		<table>
-			<tr>
-				<th> Network (PAN) ID </th>
-				<th> Base station ID </th>
-				<th> Encryption </th>
-			</tr>
-			<tr>
-				<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
-				<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
-				<td> <input type="checkbox" name="Encrypt" form="encryptFrom"/> </td>
-			</tr>
-		</table>
-		</p>
 
 		<div id="networkDisplayDiv"></div>
 		
