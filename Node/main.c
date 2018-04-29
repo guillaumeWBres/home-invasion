@@ -14,13 +14,15 @@ volatile int ta1_count;
 #define WDT_MOD	0xffff
 volatile int wdt_count;
 
-volatile int pVal;
-volatile uint8_t debouncing;
-volatile int dbc_count;
+#define MIC 			BIT5 // P1.5: AN
 #define DER_THRESH	(1024/10) // 10% variation will trigger
-#define LED		BIT0 // P1.0: debouncer
-#define MIC 	BIT5 // P1.5: AN
+volatile int 			pVal;
+volatile uint8_t 		debouncing;
+volatile int 			dbc_count;
 #define DEBOUNCE_LIM	0xffff
+
+#define LED				BIT0 // P1.0: debouncer
+volatile uint8_t 		detected;
 
 void adc_init(void);
 void uart_init(void);
@@ -29,12 +31,20 @@ void platform_init(void);
 
 int main(void){
 	platform_init();
+	//xbee_setup("5110", "5101"); // set PAN ID & My ID	
+
+	// notify BS
+	//xbee_unicast("Hello from MSP430\n", "0000", "5100", 
+	//	strlen("Hello from MSP430\n")+1
+//	);
+
+	xbee_send_command("up & running\n", strlen("up & running\n")+1);
 	while(1);
 	return 0;
 }
 
 void platform_init(void){
-	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) while(1);
+//	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) {while(1);};
 	BCSCTL1 = CALBC1_1MHZ;
 	DCOCTL = CALDCO_1MHZ;
 	WDTCTL = WDTPW + WDTHOLD;
@@ -42,7 +52,6 @@ void platform_init(void){
 	adc_init();
 	timers_init();
 	xbee_init();
-
 	_BIS_SR(GIE);
 }
 
@@ -95,6 +104,7 @@ __interrupt void CCR0_ISR(void){
 			ADC10CTL0 |= ENC + ADC10SC;
 			while (ADC10CTL1 & ADC10BUSY);
 			pVal = ADC10MEM;
+			detected &= 0x00;
 			P1OUT &= ~LED;
 		} else
 			dbc_count++;
@@ -108,9 +118,8 @@ __interrupt void CCR0_ISR(void){
 		der = nVal-pVal;
 		if (der < 0) der *= (-1); // |abs|: only care about changes
 
-		if (der >= DER_THRESH){
-			sprintf(status, "major: %d\r\n", der);
-		}
+		if (der >= DER_THRESH)
+			detection |= 0x01;
 	
 		pVal = nVal; 
 	}
