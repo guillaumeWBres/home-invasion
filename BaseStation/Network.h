@@ -43,6 +43,12 @@ public:
 	// discovers all devices over this network 
 	int discoverDevices(const char *tty);
 
+	// sets all end devices to sleep/hibernation
+	void sleep(void);
+
+	// wakes all end devices up
+	void wakeup(void);
+
 private:
 	
 	vector<Node> nodes;

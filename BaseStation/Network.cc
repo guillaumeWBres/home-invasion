@@ -133,3 +133,19 @@ int Network::discoverDevices(const char *tty){
 
 	return 0;
 }
+
+void Network::sleep(void){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			nodes[i].sleep();
+		}
+	}
+}
+
+void Network::wakeup(void){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			nodes[i].wakeup();
+		}
+	}
+}
