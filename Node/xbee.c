@@ -107,6 +107,15 @@ void xbee_unicast(const char *payload, const char *DH, const char *DL, const int
 	xbee_send_command(payload, size);
 }
 
+uint8_t checksum(const char *API_frame){
+	int i;
+	int sum = 0;
+	for (i=2; i<strlen(API_frame); i++)
+		sum += API_frame[i];
+	sum &= 0xFF;
+	return (uint8_t)(0xFF-sum);
+}
+
 void xbee_sleep(void){
 	P1OUT |= SLEEP_PIN;
 }
