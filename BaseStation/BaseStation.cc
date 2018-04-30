@@ -59,7 +59,7 @@ void BaseStation::retrieveTimeZoneFromDB(void){
 
 	// build query
 	sprintf(query, 
-		"select * from systemtimes where Date = \"%d",
+		"select * from systemtimes where Start = \"%d",
 			_now->tm_year+1900
 	);
 	
@@ -76,21 +76,15 @@ void BaseStation::retrieveTimeZoneFromDB(void){
 	mysql_query(connection, query);
 
 	result = mysql_store_result(connection);
-	row = mysql_fetch_row(result);
 	int num = mysql_num_fields(result);
 	
 	for (int i=0; i < num; i++){
 		field = mysql_fetch_field(result);
-		if (strcmp(field->name, "TON1") == 0){
-			_setTON1();
-		} else if (strcmp(field->name, "TON2") == 0){
-			_setTON2();
-
-		} else if (strcmp(field->name, "TINT1") == 0){
-			_setTINT1();
-
-		} else if (strcmp(field->name, "TINT2") == 0){
-			_setTINT2();
+		if (strcmp(field->name, "Start") == 0){
+			//_setTON1();
+			cout << "Found start time: " << field->name << "\n";
+		} else if (strcmp(field->name, "Stop") == 0){
+			cout << "Found stop time: " << field->name << "\n";
 		}
 	}
 	
