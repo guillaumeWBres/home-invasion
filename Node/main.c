@@ -6,7 +6,13 @@
 
 #include "xbee.h"
 
-char status[64];
+#define SELF_ID	"5101"
+
+volatile uint8_t status;
+#define STATUS_IDLE					0x00
+#define STATUS_WORKING				0x01
+#define STATUS_NOT_NOTIFIED		0x02
+#define STATUS_NOTIFIED_WAIT_ACK	0x03
 
 #define TA1_MOD  13733
 volatile int ta1_count;
@@ -17,12 +23,8 @@ volatile int wdt_count;
 #define MIC 			BIT5 // P1.5: AN
 #define DER_THRESH	(1024/10) // 10% variation will trigger
 volatile int 			pVal;
-volatile uint8_t 		debouncing;
-volatile int 			dbc_count;
-#define DEBOUNCE_LIM	0xffff
 
 #define LED				BIT0 // P1.0: debouncer
-volatile uint8_t 		detected;
 
 void adc_init(void);
 void uart_init(void);
@@ -30,21 +32,65 @@ void timers_init(void);
 void platform_init(void);
 
 int main(void){
+	char buffer[64];
+
 	platform_init();
-	//xbee_setup("5110", "5101"); // set PAN ID & My ID	
+	//xbee_setup("5110", SELF_ID); // set PAN ID & My ID	
 
 	// notify BS
 	//xbee_unicast("Hello from MSP430\n", "0000", "5100", 
 	//	strlen("Hello from MSP430\n")+1
 //	);
 
-	xbee_send_command("up & running\n", strlen("up & running\n")+1);
-	while(1);
+	xbee_send_command("'5101' up & running\n", 
+		strlen("up & running\n")+1
+	);
+
+	status = STATUS_WORKING; // will eventually be set by BS 
+
+	while(1){
+		switch (status){
+
+			case STATUS_NOT_NOTIFIED:
+				status = STATUS_NOTIFIED_WAIT_ACK;
+				
+				xbee_answered_command(
+					"'5101' got something\n",
+						strlen("'5101' got something\n")+1,
+							buffer
+				);
+
+				break;
+
+			case STATUS_NOTIFIED_WAIT_ACK:
+				if (strcmp(buffer, "RESTART\r") == 0){
+
+					xbee_send_command("'5101' going back to work\n",
+						strlen("'5101' going back to work\n"+1)
+					);
+
+					status &= STATUS_IDLE;
+					P1OUT &= ~LED;
+	
+					ADC10CTL0 |= ENC + ADC10SC; 
+					while (ADC10CTL1 & ADC10BUSY);
+					pVal = ADC10MEM;
+				}
+				break;
+
+			default:
+			case STATUS_IDLE:
+			case STATUS_WORKING:
+				// sleep?
+				break;
+		}
+	}
+
 	return 0;
 }
 
 void platform_init(void){
-//	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) {while(1);};
+	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) {while(1);};
 	BCSCTL1 = CALBC1_1MHZ;
 	DCOCTL = CALDCO_1MHZ;
 	WDTCTL = WDTPW + WDTHOLD;
@@ -52,7 +98,7 @@ void platform_init(void){
 	adc_init();
 	timers_init();
 	xbee_init();
-	_BIS_SR(GIE);
+	_BIS_SR(GIE);	
 }
 
 void adc_init(void){
@@ -69,8 +115,6 @@ void adc_init(void){
 	ADC10CTL0 |= ENC + ADC10SC; // 1st start
 	while (ADC10CTL1 & ADC10BUSY);
 	pVal = ADC10MEM;
-	debouncing &= 0x00;
-	dbc_count = 0;
 
 	P1DIR |= LED;
 	P1OUT &= 0x00;
@@ -95,33 +139,20 @@ void timers_init(void){
 __interrupt void CCR0_ISR(void){
 	int nVal, der;
 
-	if (debouncing){
-		P1OUT |= LED;
-
-		if (dbc_count == DEBOUNCE_LIM){
-			dbc_count = 0;
-			debouncing &= 0x00;
-			ADC10CTL0 |= ENC + ADC10SC;
-			while (ADC10CTL1 & ADC10BUSY);
-			pVal = ADC10MEM;
-			detected &= 0x00;
-			P1OUT &= ~LED;
-		} else
-			dbc_count++;
-
-	} else {
-
+	if (status == STATUS_WORKING){
 		ADC10CTL0 |= ENC + ADC10SC; 
 		while (ADC10CTL1 & ADC10BUSY);
 		nVal = ADC10MEM;
 
 		der = nVal-pVal;
-		if (der < 0) der *= (-1); // |abs|: only care about changes
+		if (der < 0) 
+			der *= (-1); // |abs|: only care about changes
 
-		if (der >= DER_THRESH)
-			detection |= 0x01;
-	
-		pVal = nVal; 
+		if (der >= DER_THRESH){ // major change
+			status = STATUS_NOT_NOTIFIED;
+			P1OUT |= LED;
+		} else
+			pVal = nVal; 
 	}
 
 	TA0R = 0;
@@ -130,7 +161,7 @@ __interrupt void CCR0_ISR(void){
 #pragma vector = TIMER0_A1_VECTOR
 __interrupt void CCR1_ISR(void){
 	if (ta1_count == TA1_MOD-1){
-		// xbee_status_report();
+		// xbee_status_report(status);
 		ta1_count = 0;
 	} else
 		ta1_count++;
@@ -138,16 +169,28 @@ __interrupt void CCR1_ISR(void){
 	TA0R = 0;
 }
 
-/* WDT is enabled on orders received by BS
-	monitors activity: goes back to hibernation
-	if no activity detected
+/* WDT is here to make sure app
+	is power consumption optimized */
 
+/*
 #pragma vector = WDT_VECTOR
 __interrupt void watchdog_timer(void){
 	if (wdt_count == WDT_MOD-1){
-		_BIS_SR(LPM3_bits + GIE); // LPM3 hibernation from now on
-		WDTCTL = WDTPW + WDTHOLD; // kill WDT
-		wdt_cont = 0;
+		switch(status) {
+			// extern rx_ptr
+			rx_ptr &= 0; // will wake up() if sleeping?
+			case STATUS_IDLE:
+			case STATUS_WORKING:
+				_BIS_SR(LPM3_bits + GIE); 
+				WDTCTL = WDTPW + WDTHOLD;
+				wdt_cont &= 0;
+				break;
+			
+			case STATUS_NOT_NOTIFIED:
+			case STATUS_NOTIFIED_WAIT_ACK:
+			default:
+				break;
+		}
 	} else
 		wdt_cont++;
 }
