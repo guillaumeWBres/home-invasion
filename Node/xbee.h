@@ -1,8 +1,6 @@
 #ifndef __XBEE_H__
 #define __XBEE_H__
 
-#define XBEE_SLEEP BIT6
-
 // initializes UART for XBEE communcations
 // notifies BS we're live when done
 void xbee_init(void);
@@ -32,5 +30,8 @@ void xbee_broadcast(const char *payload, const int size);
 
 // sends given message to specified dest ADDR
 void xbee_unicast(const char *payload, const char *DH, const char *DL, const int size);
+
+// calculates checksum of given API frame
+uint8_t checksum(const char *API_frame);
 
 #endif
