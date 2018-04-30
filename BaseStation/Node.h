@@ -97,6 +97,12 @@ public:
 
 	int send_API_frame(const uint16_t size);
 
+	// sets node to sleep mode
+	void sleep(void);
+
+	// wakes node up
+	void wakeup(void);
+
 private:
 	// role within network
 	uint8_t _role;

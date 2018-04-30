@@ -288,6 +288,7 @@ int Node::send_API_frame(const uint16_t size){
 	LSB = (size)&0x0F;
 //	strcpy(frame+1, MSB, 2);
 //	strcpy(frame+3, LSB, 2);
+	return 0;
 }
 
 uint8_t Node::_checksum(const char *frame){
@@ -296,6 +297,14 @@ uint8_t Node::_checksum(const char *frame){
 		sum += frame[i];
 	sum &= 0xFF;
 	return (uint8_t)(0xFF-sum);
+}
+
+void Node::sleep(void){
+	printf("%s << sleep !!\n", getATMY().c_str());
+}
+
+void Node::wakeup(void){
+	printf("%s << wakeup !!\n", getATMY().c_str());
 }
 
 std::string Node::getATID(void){
