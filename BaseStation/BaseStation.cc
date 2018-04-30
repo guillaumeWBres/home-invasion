@@ -3,6 +3,7 @@
 // C
 #include <time.h>
 #include <string.h>
+#include <stdio.h>
 
 // CXX
 #include <vector>
@@ -80,15 +81,15 @@ void BaseStation::retrieveTimeZoneFromDB(void){
 	
 	for (int i=0; i < num; i++){
 		field = mysql_fetch_field(result);
-		if (strcmp(field, "TON1") == 0){
+		if (strcmp(field->name, "TON1") == 0){
 			_setTON1();
-		} else if (strcmp(field, "TON2") == 0){
+		} else if (strcmp(field->name, "TON2") == 0){
 			_setTON2();
 
-		} else if (strcmp(field, "TINT1") == 0){
+		} else if (strcmp(field->name, "TINT1") == 0){
 			_setTINT1();
 
-		} else if (strcmp(field, "TINT2") == 0){
+		} else if (strcmp(field->name, "TINT2") == 0){
 			_setTINT2();
 		}
 	}
