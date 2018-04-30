@@ -1,3 +1,5 @@
+DEBUG = 1
+
 ifeq ($(DEBUG),1)
 CC = gcc
 CXX = g++
@@ -11,29 +13,19 @@ BUILDROOT_TOOLCHAIN_DIR = $(BUILDROOT_HOST_DIR)/usr/bin
 BUILDROOT_CROSS_COMPILE = $(BUILDROOT_TOOLCHAIN_DIR)/$(BUILDROOT_CC_PREFIX)
 CC = $(BUILDROOT_CROSS_COMPILE)-gcc
 CXX = $(BUILDROOT_CROSS_COMPILE)-g++
+#CFLAGS = -O3 
 endif
 
 OBJ = main
-SRCS = Network.cc
+SRCS = BaseStation.cc
+SRCS += Network.cc
 SRCS += Node.cc
 
-#SRCS = OpenCV/opencv_lib.cpp
+LDFLAGS += -I/usr/include/mysql
+LDFLAGS += -L/usr/include/mysql
 
 CFLAGS += -Wall
-#CFLAGS = -O3 
-#CFLAGS += -I$(BUILDROOT_STAGING_DIR)/usr/include
-#LDFLAGS = -L$(BUILDROOT_STAGING_DIR)/usr/lib
-#LDFLAGS += -lopencv_core -lopencv_imgproc -lopencv_objdetect
-#LDFLAGS += -lopencv_video -lopencv_videoio -lopencv_highgui
-#LDFLAGS += -lm
-
-ifeq ($(USE_GOOGLE_VOICE),Yes)
-CFLAGS += -DUSE_GOOGLE_VOICE
-LDFLAGS += -lcurl
-LDFLAGS += -lboost_regex
-SRCS += GoogleVoice/gvoice.cpp
-SRCS += GoogleVoice/send_text.cpp
-endif
+CFLAGS += -lmysqlclient
 
 $(OBJ): $(OBJ).cc $(SRCS)
 	$(CXX) $(OBJ).cc $(SRCS) $(CFLAGS) $(LDFLAGS) -o $(OBJ)
