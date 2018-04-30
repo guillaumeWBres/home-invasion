@@ -10,6 +10,9 @@ using namespace std;
 #include "Network.h"
 #include "Node.h"
 
+Network::Network(void){
+}
+
 Network::Network(vector<Node> n){
 	for (unsigned int i=0; i<n.size(); i++)
 		nodes.push_back(n[i]);

@@ -10,6 +10,7 @@ using namespace std;
 
 class Network {
 public:
+	Network(void);
 	Network(vector<Node> nodes);
 	
 	// adds given node to network
