@@ -11,8 +11,8 @@
 volatile uint8_t status;
 #define STATUS_IDLE					0x00
 #define STATUS_WORKING				0x01
-#define STATUS_NOT_NOTIFIED		0x02
-#define STATUS_NOTIFIED_WAIT_ACK	0x03
+#define STATUS_GOT_SOMETHING 		0x02
+#define STATUS_WAIT_ACK				0x03
 
 #define TA1_MOD  13733
 volatile int ta1_count;
@@ -21,10 +21,12 @@ volatile int ta1_count;
 volatile int wdt_count;
 
 #define MIC 			BIT5 // P1.5: AN
-#define DER_THRESH	(1024/10) // 10% variation will trigger
+#define DER_THRESH	(1024/5) // 5% variation will trigger
 volatile int 			pVal;
 
 #define LED				BIT0 // P1.0: debouncer
+
+volatile int rx_ptr;
 
 void adc_init(void);
 void uart_init(void);
@@ -32,55 +34,54 @@ void timers_init(void);
 void platform_init(void);
 
 int main(void){
-	char buffer[64];
+	char buffer[BUFSIZE];
 	platform_init();
 	
 	// PAN ID: 5110
 	// MY ID: 5100+node(id)
-	// default DEST: BS 5100
+	// default DEST: BS, ie. 5100
 	xbee_setup("5110", "5101", "5100"); 
 
-	P1OUT |= LED;
-	
-	xbee_broadcast("Hello from Node(1)\r\n", 
-		strlen("Hello from Node(1)\r\n")+2
-	);
-
 	xbee_unicast(
-		"Node(1)..", "5100", 
-		strlen("Node(1)..")
+		"Node(1) is now working\r\n", "5100", 
+			strlen("Node(1) is now working\r\n")+2
 	);
-
-	xbee_unicast(
-		"is going to sleep\r\n", "5100", 
-		strlen("is going to sleep\r\n")+2
-	);
-	while(1);
 
 	status = STATUS_WORKING; // will eventually be set by BS 
+	
+	// initialize der. calculator
+	ADC10CTL0 |= ENC + ADC10SC; 
+	while (ADC10CTL1 & ADC10BUSY);
+	pVal = ADC10MEM;
 
 	while(1){
 		switch (status){
 
-			case STATUS_NOT_NOTIFIED:
-				status = STATUS_NOTIFIED_WAIT_ACK;
-				
-				//xbee_answered_command(
-				//	"'5101' got something\n",
-				//		strlen("'5101' got something\n")+1,
-				//			buffer
-				//);
+			case STATUS_GOT_SOMETHING:
 
+				// notify BS	
+				xbee_unicast(
+					"Node(1) detected something\r\n", "5100",
+						strlen("Node(1) detected something\r\n")+2
+				);
+
+				status = STATUS_WAIT_ACK;
+
+				// enable RX
+				rx_ptr &= 0;
+				UC0IE |= UCA0RXIE;
+				xbee_wait_instructions(buffer);
 				break;
 
-			case STATUS_NOTIFIED_WAIT_ACK:
-				if (strcmp(buffer, "RESTART\r") == 0){
+			case STATUS_WAIT_ACK:
+				if (buffer[0] == 'A'){
 
-					xbee_send_command("'5101' going back to work\n",
-						strlen("'5101' going back to work\n"+1)
+					xbee_unicast(
+						"Node(1) going back to work..\r\n", "5100",
+							strlen("Node(1) going back to work..\r\n"+2)
 					);
 
-					status &= STATUS_IDLE;
+					status = STATUS_WORKING;
 					P1OUT &= ~LED;
 	
 					ADC10CTL0 |= ENC + ADC10SC; 
@@ -123,10 +124,6 @@ void adc_init(void){
 	ADC10AE0 |= MIC;
 	ADC10CTL1 &= ~ADC10DF; // unsigned for thresh. validity
 	
-	ADC10CTL0 |= ENC + ADC10SC; // 1st start
-	while (ADC10CTL1 & ADC10BUSY);
-	pVal = ADC10MEM;
-
 	P1DIR |= LED;
 	P1OUT &= 0x00;
 }
@@ -160,7 +157,7 @@ __interrupt void CCR0_ISR(void){
 			der *= (-1); // |abs|: only care about changes
 
 		if (der >= DER_THRESH){ // major change
-			status = STATUS_NOT_NOTIFIED;
+			status = STATUS_GOT_SOMETHING;
 			P1OUT |= LED;
 		} else
 			pVal = nVal; 
