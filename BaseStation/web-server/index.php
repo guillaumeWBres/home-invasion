@@ -6,6 +6,8 @@
 	<script src="fullcalendar-3.9.0/lib/moment.min.js"></script>
 	<script src="fullcalendar-3.9.0/fullcalendar.min.js"></script>
 
+	<script src="xml-http-request.js"></script>
+
 	<style>
 
 		.header {
@@ -107,21 +109,22 @@
 	<head>
 		
 		<script>
-			
-			// read events
-			var request = new XMLHttpRequest();
-			request.open("GET", "events.json", false);
-			request.send(null);
-			var events = JSON.parse(request.responseText);
+			// page has been loaded: request events from .db	
+			$(document).ready(function(){
 
-			// initialize calendar object once page is settled
-			$(document).ready(function() {
-				$('#calendar').fullCalendar({
+				var date = new Date();
+				var d = date.getDate();
+				var m = date.getMonth();
+				var y = date.getFullYear();
+				
+				// build calendar object
+				var calendar = $('#calendar').fullCalendar({
 					header: {
-						left: "",
-						right: "",
+						left: "prev",
+						right: "next",
 						center: "title",
 					},
+
 					defaultView: "agendaWeek", // weekly agenda only
 					navLinks: false, // remove navigation bar
 					editable: true,
@@ -134,9 +137,30 @@
 						start: '09:30', // start time
 						end: '18:00', // end time
 					},
-					events: events // read from events.json 
-				})
-			});
+			
+					events: $.ajax({
+						data: "start=2018-05-01"+"&end=2018-05-06",
+						url: 'http://127.0.0.1/events.php',
+						method: 'GET',
+						success: function(msg){
+							alert(msg);
+						},
+					}), // retrieve events for this week via AJAX 
+					
+					select : function(start, end, allDay){
+
+						calendar.fullCalendar('renderEvent',
+						{
+							title: title,
+							start: start,
+							end: end,
+							allDay: allDay
+						},
+						true // make events "stick"
+						);
+					}
+				}); // calendar constructor
+			}); // docIsReady
 		</script>
 	</head>
 	
@@ -144,7 +168,7 @@
 
 		<div class="header">
 			<h1> Welcome ! </h1>
-			<?php echo 'Hello toto'; ?>
+			<?php echo 'Hello from PHP'; ?>
 		</div>
 
 		<div class="networkColumn">
@@ -202,6 +226,38 @@
 		<div class="mapArea">
 			<script src="mapDrawer.js"></script>
 		</div>
+
+		<script>
+	/*
+			// send request from Text
+			function sendRequest(str){
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.onreadystatechange = function(){
+					if (this.readyState == 4 && this.status == 200){
+						alert(this.responseText);
+					}
+				};
+				xmlhttp.open("GET", "ajax.php?q=getdB");
+				xmlhttp.send();
+			};
+
+			// post request on click
+			$('.getdBbutton').click(function(){
+				var value = $(this).val();
+				var ajaxurl = 'ajax.php';
+				var data = {'action': 'getdB'};
+				$.post(ajaxurl, data, function(response){
+					alert("action performed successfully");
+				});
+			});
+	*/
+		</script>
 		
+		<form action="index.php" method="post">
+			<input type="submit" class="getdBbutton" name="getdB" value="getdB" />
+			<input type="text" onkeyup="sendRequest(this.value)">
+		</form>
+		
+
 	</body>
 </html>
