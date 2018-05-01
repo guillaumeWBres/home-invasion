@@ -14,11 +14,12 @@ void xbee_send_command(const char *cmd, const int size);
 int xbee_confirmed_command(const char *cmd, const int size, const char *confirm);
 
 // sends given command to XBEE module
-// returns number of bytes received & associated answer
-int xbee_answered_command(const char *cmd, const int size, char *answer);
+// returns number of bytes received
+// associated answer is located in UART rx buffer
+int xbee_answered_command(const char *cmd, const int size);
 
 // sets XBEE module up using given parameters
-void xbee_setup(const char *ID, const char *MY);
+void xbee_setup(const char *ID, const char *MY, const char *DL);
 
 // puts XBEE module in hibernation mode (PIN mode)
 // or wakes it up
@@ -29,7 +30,7 @@ void xbee_wakeup(void);
 void xbee_broadcast(const char *payload, const int size);
 
 // sends given message to specified dest ADDR
-void xbee_unicast(const char *payload, const char *DH, const char *DL, const int size);
+void xbee_unicast(const char *payload, const char *dl, const int size);
 
 // calculates checksum of given API frame
 uint8_t checksum(const char *API_frame);
