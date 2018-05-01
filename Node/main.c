@@ -33,18 +33,29 @@ void platform_init(void);
 
 int main(void){
 	char buffer[64];
-
 	platform_init();
-	//xbee_setup("5110", SELF_ID); // set PAN ID & My ID	
+	
+	// PAN ID: 5110
+	// MY ID: 5100+node(id)
+	// default DEST: BS 5100
+	xbee_setup("5110", "5101", "5100"); 
 
-	// notify BS
-	//xbee_unicast("Hello from MSP430\n", "0000", "5100", 
-	//	strlen("Hello from MSP430\n")+1
-//	);
-
-	xbee_send_command("'5101' up & running\n", 
-		strlen("up & running\n")+1
+	P1OUT |= LED;
+	
+	xbee_broadcast("Hello from Node(1)\r\n", 
+		strlen("Hello from Node(1)\r\n")+2
 	);
+
+	xbee_unicast(
+		"Node(1)..", "5100", 
+		strlen("Node(1)..")
+	);
+
+	xbee_unicast(
+		"is going to sleep\r\n", "5100", 
+		strlen("is going to sleep\r\n")+2
+	);
+	while(1);
 
 	status = STATUS_WORKING; // will eventually be set by BS 
 
@@ -54,11 +65,11 @@ int main(void){
 			case STATUS_NOT_NOTIFIED:
 				status = STATUS_NOTIFIED_WAIT_ACK;
 				
-				xbee_answered_command(
-					"'5101' got something\n",
-						strlen("'5101' got something\n")+1,
-							buffer
-				);
+				//xbee_answered_command(
+				//	"'5101' got something\n",
+				//		strlen("'5101' got something\n")+1,
+				//			buffer
+				//);
 
 				break;
 
