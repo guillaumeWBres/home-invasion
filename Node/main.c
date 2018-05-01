@@ -21,7 +21,7 @@ volatile int ta1_count;
 volatile int wdt_count;
 
 #define MIC 			BIT5 // P1.5: AN
-#define DER_THRESH	(1024/5) // 5% variation will trigger
+#define DER_THRESH	(10*1024/100) // 5% variation will trigger
 volatile int 			pVal;
 
 #define LED				BIT0 // P1.0: debouncer
