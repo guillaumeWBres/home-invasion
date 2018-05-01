@@ -7,6 +7,7 @@
 #define RX 	BIT1
 #define TX 	BIT2
 #define SLEEP_PIN	BIT3
+#define RST_PIN	BIT4
 #define BUFSIZE 64
 
 char rx_buffer[BUFSIZE];
@@ -19,17 +20,19 @@ volatile int tx_ptr;
 volatile int tx_size;
 volatile uint8_t tx_done;
 
+static char DL[4];
+
 void xbee_init(void){
-	P1DIR |= RX+TX+SLEEP_PIN;
+	P1DIR |= RX+TX; // XBEE uart
+	P1DIR |= SLEEP_PIN; // XBEE ctrl
 	P1SEL |= RX+TX;
 	P1SEL2 |= RX+TX;
 	
 	xbee_wakeup();
 	
 	UCA0CTL1 |= UCSSEL_2; // SMCLK
-	UCA0BR0 = 0x08; // 115200 b/s @1M
-	UCA0BR1 = 0x00; // 115200 b/s @1M
-	UCA0MCTL = UCBRS2 + UCBRS0; // 5% modulation
+	UCA0BR0 = 104; // 9600 B/s @ 1M
+	UCA0BR1 = 0x00; // 9600 B/s @ 1M
 	UCA0CTL1 &= ~UCSWRST;
 	UC0IE &= ~UCA0TXIE; // disable TX ISR
 	UC0IE &= ~UCA0RXIE; // disable RX ISR
@@ -58,52 +61,133 @@ int xbee_confirmed_command(const char *cmd, const int size, const char *confirm)
 		return -1;
 }
 
-int xbee_answered_command(const char *cmd, const int size, char *answer){
+int xbee_answered_command(const char *cmd, const int size){
 	xbee_send_command(cmd, size);
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
+	return strlen(rx_buffer);
+}
+
+void xbee_setup(const char *id, const char *my, const char *dl){
+	char buffer[16];
+
+	__delay_cycles(1000000);
+	xbee_send_command("+++", 3); // enter CMD mode
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
+
+	// set Network (PAN) ID
+	strcpy(buffer, "ATID");
+	strcpy(buffer+4, id);
+	buffer[8] = '\r';
+	xbee_send_command(buffer, 9); 
+	
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
+	
+	// set ATMY
+	strcpy(buffer, "ATMY");
+	strcpy(buffer+4, my);
+	buffer[8] = '\r';
+	xbee_send_command(buffer, 9); 
 
 	rx_ptr &= 0;
 	rx_done &= 0x00;
 	UC0IE |= UCA0RXIE;
 	while (!rx_done);
 
-	strcpy(answer, rx_buffer);
-	return strlen(rx_buffer);
-}
+	// set default ADDR
+	// ADDRH will not be used
+	xbee_send_command("ATDH0\r", 6);
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
 
-void xbee_setup(const char *ID, const char *MY){
-	char buffer[16];
-	xbee_confirmed_command("+++\r", 4, "OK\r"); // enter CMD mode
-	xbee_confirmed_command("ATCT32\r", 7, "OK\r"); // CMD timeout
-	
-	sprintf(buffer, "ATID%s\n", ID); 
-	xbee_confirmed_command(buffer, 9, "OK\r");
-	
-	sprintf(buffer, "ATMY%s\r", MY); 
-	xbee_confirmed_command(buffer, 9, "OK\r");
+	strcpy(buffer, "ATDL");
+	strcpy(buffer+4, dl);
+	strcpy(DL, dl); // store internally for next unicast/broadcast
+	buffer[8] = '\r';
+	xbee_send_command(buffer, 9); 
+
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
 
 // ATSM: sleep mode [0:disabled;1:Pin sleep enabled;4:Cyclic;5:Cyclic+pin wakeup]
 // ATSP: sleep period ([0x20-0xAF0] x 10ms)
 // ATST: time before sleep; timer resets on SERIAL/XBEE data (*x1ms)
 // ATSO: sleep option: 0: always wake up for ST time, 1: sleep entire SN*SP time
-	
-	xbee_confirmed_command("ATCN\n", 5, "OK\r");
+
+	xbee_send_command("ATCN\r", 5);
+	rx_ptr &= 0;
+	rx_done &= 0x00;
+	UC0IE |= UCA0RXIE;
+	while (!rx_done);
 }
 
 void xbee_broadcast(const char *payload, const int size){
-	xbee_confirmed_command("+++", 3, "OK\r"); // enter CMD mode
-	xbee_confirmed_command("ATDH0\r", 6, "OK\r"); // clear ADDR hi
-	xbee_confirmed_command("ATDHFFFF\r", 9, "OK\r"); // set broadcast DEST
-	xbee_confirmed_command("ATCN\r", 5, "OK\r");
+	if (strcmp(DL, "FFFF") != 0){
+		// configure for broadcast 
+		__delay_cycles(1000000);
+		xbee_send_command("+++", 3); // enter CMD mode
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+
+		strcpy(DL, "FFFF"); // store internally for next unicast/broadcast
+		xbee_send_command("ATDLFFFF\r", 9); 
+
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+
+		xbee_send_command("ATCN\r", 5);
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+	} 
 	xbee_send_command(payload, size);
 }
 
-void xbee_unicast(const char *payload, const char *DH, const char *DL, const int size){
+void xbee_unicast(const char *payload, const char *dl, const int size){
 	char buffer[16];
-	xbee_confirmed_command("+++", 3, "OK\r"); // enter CMD mode
-	// set dest ADDR
-	sprintf(buffer, "ATDH%s\r", DH); xbee_confirmed_command(buffer, 9, "OK\r");
-	sprintf(buffer, "ATDL%s\r", DL); xbee_confirmed_command(buffer, 9, "OK\r");
-	xbee_confirmed_command("ATCN\r", 5, "OK\r");
+	if (strcmp(DL, dl) != 0){
+		// need to program correct DEST ADDR
+		__delay_cycles(1000000);
+		xbee_send_command("+++", 3); // enter CMD mode
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+
+		strcpy(buffer, "ATDL");
+		strcpy(buffer+4, dl);
+		strcpy(DL, dl); // store internally for next unicast/broadcast
+		buffer[8] = '\r';
+		xbee_send_command(buffer, 9); 
+
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+
+		xbee_send_command("ATCN\r", 5);
+		rx_ptr &= 0;
+		rx_done &= 0x00;
+		UC0IE |= UCA0RXIE;
+		while (!rx_done);
+	} 
 	xbee_send_command(payload, size);
 }
 
@@ -136,9 +220,11 @@ __interrupt void USCI0TX_ISR(void){
 
 #pragma vector = USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
-	rx_buffer[rx_ptr++] = UCA0RXBUF;
+	rx_buffer[rx_ptr] = UCA0RXBUF;
 	if (rx_ptr == BUFSIZE-1) // avoid overflow
 		rx_ptr = 0;
+	else
+		rx_ptr++;
 
 	if (UCA0RXBUF == '\r'){
 		rx_done |= 0x01;
