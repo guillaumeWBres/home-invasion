@@ -120,7 +120,7 @@
 						center: "title,month,agendaWeek",
 					},
 
-					defaultView: "agendaWeek", // weekly agenda only
+					defaultView: "month", // weekly agenda only
 					navLinks: false, // remove navigation bar
 					editable: true,
 					selectable: true,
@@ -138,10 +138,20 @@
 						customPrev: {
 							text: '<',
 							click: function(){
-								$('#calendar').fullCalendar('prev');
 								var view = $('#calendar').fullCalendar('getView');
-								alert(view.start.format('YYYY-MM-DD'));
-								alert(view.end.format('YYYY-MM-DD'));
+								var start = view.start.format('YYYY-MM-DD');
+								var end = view.end.format('YYYY-MM-DD');
+								$.ajax({
+									url: 'http://127.0.0.1/events.php',
+									data: 'vStart='+start+'&vEnd='+end,
+									type: "POST",
+									dataType: 'json',
+									success: function(json){
+										// add new events to already known events
+										$('#calendar').fullCalendar('eventRender');
+									},
+								});
+								$('#calendar').fullCalendar('prev');
 							},
 						},
 
@@ -150,8 +160,8 @@
 							click: function(){
 								$('#calendar').fullCalendar('next');
 								var view = $('#calendar').fullCalendar('getView');
-								alert(view.start.format('YYYY-MM-DD'));
-								alert(view.end.format('YYYY-MM-DD'));
+								//alert(view.start.format('YYYY-MM-DD'));
+								//alert(view.end.format('YYYY-MM-DD'));
 							},
 						},
 					},
@@ -176,26 +186,36 @@
 						},
 					},
 
-					// add new events to database
+					//custom event visualization
+					//eventRender: function(event, element){
+					//},
+
+					// called on user timezone selection
 					select : function(start, end, allDay){
-						start = $.fullCalendar.formatDate(start, "yyyy-MM-dd HH:mm:ss");
-						end = $.fullCalendar.formatDate(end, "yyy-MM-dd HH:mm:ss");
-						$.ajax({
-							url: 'http://127.0.0.1/add_events.php',
-							data: 'start='+start+'&end='+end,
-							type: "POST",
-							succes: function(json){
-								alert('OK');
-							}
-						});
-						calendar.fullCalendar('renderEvent',
-						{
-							title: "test",
-							start: start,
-							end: end,
-							allDay: allDay
-						},
-						true); // make events "stick"
+						var title = prompt("Set title:");
+						if (title){ // from USER
+							// format for SQL
+							var start = start.format('YYYY-MM-DD HH:mm:ss');
+							var end = end.format('YYYY-MM-DD HH:mm:ss');
+							// pass to PHP via AJAX
+							$.ajax({
+								url: 'http://127.0.0.1/add_events.php',
+								data: 'title='+title+'&start='+start+'&end='+end,
+								type: "POST",
+								success: function(json){
+									alert('OK');
+								}
+							});
+						}
+
+						//calendar.fullCalendar('renderEvent',
+						//{
+						//	title: "test",
+						//	start: start,
+						//	end: end,
+						//	allDay: allDay
+						//},
+						//true); // make events "stick"
 					}
 				}); // calendar constructor
 			}); // docIsReady
