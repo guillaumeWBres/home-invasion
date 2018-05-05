@@ -219,7 +219,7 @@
 						}
 					},
 					
-					// called when an event has been resized
+					// modify .db content when event has been resized 
 					eventResize: function(event){
 						var title = event.title;
 						var start = event.start.format('YYYY-MM-DD HH:mm:ss');
@@ -231,7 +231,7 @@
 						});
 					},
 					
-					// called when an event has been dropped 
+					// modify .db content when event has been dropped 
 					eventDrop: function(event){
 						var title = event.title;
 						var start = event.start.format('YYYY-MM-DD HH:mm:ss');
@@ -241,6 +241,19 @@
 							data: 'title='+title+'&start='+start+'&end='+end,
 							type: "POST",
 						});
+					},
+
+					// rename event when it has been clicked
+					eventClick: function(event, jsEvent, view){
+						var pTitle = event.title;
+						var nName = prompt('Enter new name..');
+						if (nName){
+							$.ajax({
+								url: 'http://127.0.0.1/rename_event.php',
+								data: 'previous='+pTitle+'&new='+nName,
+								type: "POST",
+							});
+						}
 					},
 
 				}); // calendar constructor
