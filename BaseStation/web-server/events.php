@@ -1,8 +1,8 @@
 <?php 
 	
 	// retrieve calendar->jquery infos
-	$start = $_POST['weekStart']; 
-	$end= $_POST['weekEnd']; 
+	$start = $_POST['vStart']; 
+	$end= $_POST['vEnd']; 
 
 	// database description
 	$host = "localhost";
