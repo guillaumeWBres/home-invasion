@@ -33,7 +33,7 @@
 		}
 		
 		#calendar {
-			max-width: 500px;
+			max-width: 800px;
 			margin: 0 auto;
 		}
 
@@ -112,11 +112,6 @@
 			// page has been loaded: request events from .db	
 			$(document).ready(function(){
 
-				var date = new Date();
-				var d = date.getDate();
-				var m = date.getMonth();
-				var y = date.getFullYear();
-				
 				// build calendar object
 				var calendar = $('#calendar').fullCalendar({
 					header: {
@@ -132,32 +127,53 @@
 					selectHelper: true,
 					firstDay: 1, // Monday
 					columnFormat: 'ddd D/M', // 3 letters then day/month
+					
 					businessHours: {
 						dow: [1,2,3,4,5], // Monday->Friday
 						start: '09:30', // start time
 						end: '18:00', // end time
 					},
-			
-					events: $.ajax({
-						data: "start=2018-05-01"+"&end=2018-05-06",
-						url: 'http://127.0.0.1/events.php',
-						method: 'GET',
-						success: function(msg){
-							alert(msg);
-						},
-					}), // retrieve events for this week via AJAX 
-					
-					select : function(start, end, allDay){
+				
+					events: {
+						url: 'events.php',
+						type: 'POST',
+						data: function(){
+							// build jquery params
+							// weekStart: first day of this week
+							// weekEnd: last day of this week
+							// 'YYYY-MM-DD' format used for mysql->query
 
+							var date = new Date();
+							var M1 = moment(date.toDateString()).subtract(date.getDay(),'days').format('YYYY-MM-DD');
+							var M2 = moment(date.toDateString()).add(7-date.getDay(),'days').format('YYYY-MM-DD');
+
+							return {
+								weekStart: M1,
+								weekEnd: M2
+							};
+						},
+					},
+
+					// add new events to database
+					select : function(start, end, allDay){
+						start = $.fullCalendar.formatDate(start, "yyyy-MM-dd HH:mm:ss");
+						end = $.fullCalendar.formatDate(end, "yyy-MM-dd HH:mm:ss");
+						$.ajax({
+							url: 'http://127.0.0.1/add_events.php',
+							data: 'start='+start+'&end='+end,
+							type: "POST",
+							succes: function(json){
+								alert('OK');
+							}
+						});
 						calendar.fullCalendar('renderEvent',
 						{
-							title: title,
+							title: "test",
 							start: start,
 							end: end,
 							allDay: allDay
 						},
-						true // make events "stick"
-						);
+						true); // make events "stick"
 					}
 				}); // calendar constructor
 			}); // docIsReady
@@ -171,51 +187,45 @@
 			<?php echo 'Hello from PHP'; ?>
 		</div>
 
-		<div class="networkColumn">
-			
-			<table id="networkStatusTable">
-				<tr>
-					<th>Node</th>
-					<th>Status</th>
-				</tr>
-				<tr>
-					<td>Base</td>
-					<td>OK</td>
-				</tr>
-			</table>
+		<table id="networkStatusTable">
+			<tr>
+				<th>Node</th>
+				<th>Status</th>
+			</tr>
+			<tr>
+				<td>Base</td>
+				<td>OK</td>
+			</tr>
+		</table>
 		
-			<table>
-				<tr>
-					<th> Network (PAN) ID </th>
-					<th> Base station ID </th>
-					<th> Encryption </th>
-				</tr>
-				<tr>
-					<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
-					<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
-					<td> <input type="checkbox" name="Encrypt" form="encryptFrom"/> </td>
-				</tr>
-			</table>
+		<table>
+			<tr>
+				<th> Network (PAN) ID </th>
+				<th> Base station ID </th>
+				<th> Encryption </th>
+			</tr>
+			<tr>
+				<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
+				<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
+				<td> <input type="checkbox" name="Encrypt" form="encryptFrom"/> </td>
+			</tr>
+		</table>
 
-			<div class="cardEffect">
-				<p> Power saving options </p>
-				<form>
-					<form method="POST" id="PANIDform"></form>
-					<form method="POST" id="BaseNIDform"></form>
-					<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
-					<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
-					<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
-					<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
-				</form>
-			</div>
-
+		<div class="cardEffect">
+			<p> Power saving options </p>
+			<form>
+				<form method="POST" id="PANIDform"></form>
+				<form method="POST" id="BaseNIDform"></form>
+				<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
+				<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
+				<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
+				<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
+			</form>
 		</div>
-		
-		<div class="calendarColumn">
-			<div class="cardEffect">
-				<p> Active time zones </p>
-				<div id="calendar"></div>
-			</div>
+
+		<div class="cardEffect">
+			<p> Active time zones </p>
+			<div id="calendar"></div>
 		</div>
 
 		<div class="footer">
