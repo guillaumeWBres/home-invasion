@@ -114,6 +114,9 @@
 
 				// build calendar object
 				var calendar = $('#calendar').fullCalendar({
+					contentHeight: 450,
+					aspectRatio: 1.35,
+
 					header: {
 						left: "customPrev",
 						right: "customNext",
@@ -202,21 +205,31 @@
 								url: 'http://127.0.0.1/add_events.php',
 								data: 'title='+title+'&start='+start+'&end='+end,
 								type: "POST",
-								success: function(json){
-									alert('OK');
-								}
 							});
-						}
 
-						//calendar.fullCalendar('renderEvent',
-						//{
-						//	title: "test",
-						//	start: start,
-						//	end: end,
-						//	allDay: allDay
-						//},
-						//true); // make events "stick"
-					}
+							$('#calendar').fullCalendar('renderEvent', 
+							{
+								title: title,
+								start: start,
+								end: end,
+								allDay: allDay
+							},
+							true // make event "stick"
+							);
+						}
+					},
+					
+					// called when an event has been resized
+					eventResize: function(event){
+						var title = event.title;
+						var start = event.start.format('YYYY-MM-DD HH:mm:ss');
+						var end = event.end.format('YYYY-MM-DD HH:mm:ss');
+						$.ajax({
+							url: 'http://127.0.0.1/modify_events.php',
+							data: 'title='+title+'&start='+start+'&end='+end,
+							type: "POST",
+						});
+					},
 				}); // calendar constructor
 			}); // docIsReady
 		</script>
