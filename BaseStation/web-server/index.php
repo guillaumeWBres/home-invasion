@@ -230,6 +230,19 @@
 							type: "POST",
 						});
 					},
+					
+					// called when an event has been dropped 
+					eventDrop: function(event){
+						var title = event.title;
+						var start = event.start.format('YYYY-MM-DD HH:mm:ss');
+						var end = event.end.format('YYYY-MM-DD HH:mm:ss');
+						$.ajax({
+							url: 'http://127.0.0.1/modify_events.php',
+							data: 'title='+title+'&start='+start+'&end='+end,
+							type: "POST",
+						});
+					},
+
 				}); // calendar constructor
 			}); // docIsReady
 		</script>
