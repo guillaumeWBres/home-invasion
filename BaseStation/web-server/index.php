@@ -115,9 +115,9 @@
 				// build calendar object
 				var calendar = $('#calendar').fullCalendar({
 					header: {
-						left: "prev",
-						right: "next",
-						center: "title",
+						left: "customPrev",
+						right: "customNext",
+						center: "title,month,agendaWeek",
 					},
 
 					defaultView: "agendaWeek", // weekly agenda only
@@ -133,14 +133,36 @@
 						start: '09:30', // start time
 						end: '18:00', // end time
 					},
+
+					customButtons: {
+						customPrev: {
+							text: '<',
+							click: function(){
+								$('#calendar').fullCalendar('prev');
+								var view = $('#calendar').fullCalendar('getView');
+								alert(view.start.format('YYYY-MM-DD'));
+								alert(view.end.format('YYYY-MM-DD'));
+							},
+						},
+
+						customNext: {
+							text: '>',
+							click: function(){
+								$('#calendar').fullCalendar('next');
+								var view = $('#calendar').fullCalendar('getView');
+								alert(view.start.format('YYYY-MM-DD'));
+								alert(view.end.format('YYYY-MM-DD'));
+							},
+						},
+					},
 				
 					events: {
 						url: 'events.php',
 						type: 'POST',
 						data: function(){
-							// build jquery params
-							// weekStart: first day of this week
-							// weekEnd: last day of this week
+							// builds proper POST parameters for JQuery 
+							// vStart: first entry of current view 
+							// vEnd: last entry of current view
 							// 'YYYY-MM-DD' format used for mysql->query
 
 							var date = new Date();
@@ -148,8 +170,8 @@
 							var M2 = moment(date.toDateString()).add(7-date.getDay(),'days').format('YYYY-MM-DD');
 
 							return {
-								weekStart: M1,
-								weekEnd: M2
+								vStart: M1,
+								vEnd: M2
 							};
 						},
 					},
