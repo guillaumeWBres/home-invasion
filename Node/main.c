@@ -7,6 +7,7 @@
 #include "xbee.h"
 
 #define SELF_ID	"5101"
+volatile int status;
 
 #define TA1_MOD  13733
 volatile int ta1_count;
@@ -15,10 +16,10 @@ volatile int ta1_count;
 volatile int wdt_count;
 
 #define MIC 			BIT5 // P1.5: AN
-#define DER_THRESH	(10*1024/100) // 5% variation will trigger
+#define DER_THRESH	(20*1024/100) // 20% variation will trigger
 volatile int 			pVal;
 
-#define RED					BIT1 // P1.0
+#define RED					BIT0 // P1.0
 #define GREEN				BIT6 // P2.6
 
 void adc_init(void);
@@ -30,7 +31,6 @@ void platform_init(void);
 void restart_calculator(void);
 
 int main(void){
-	int status;
 	platform_init();
 	
 	// PAN ID: 5110
@@ -50,7 +50,6 @@ int main(void){
 		
 		switch (status){
 			case NODE_ACTIVE:
-				P1OUT |= RED;
 				P2OUT &= ~GREEN;
 
 				status = xbee_wait_instructions();
@@ -78,7 +77,6 @@ int main(void){
 				break;
 			
 			case NODE_HIBERNATE:
-				P1OUT &= ~RED;
 				P2OUT |= GREEN;
 				
 				status = xbee_wait_instructions();
@@ -104,20 +102,32 @@ int main(void){
 					);
 				break;
 
+			case NODE_NOTIFY_EVENT:
+				status = NODE_STAND_BY;
+				// notify BS then stand by
+				xbee_unicast(
+					"<Node|1|STS|0|DetectionEvent>\r\n",
+						"5100",
+							strlen("<Node|1|STS|0|DetectionEvent>\r\n")+2
+				);
+				P1OUT &= ~RED;
+				break;
+
 			case NODE_STAND_BY:
 			default:
-				P1OUT &= ~RED;
 				P2OUT |= GREEN;
 
 				status = xbee_wait_instructions();
-				if (status == NODE_ACTIVE)
+				if (status == NODE_ACTIVE){
 					xbee_unicast(
 						"<Node|1|STS|1>\r\n", 
 							"5100",
 								strlen("<Node|1|STS|1>\r\n")+2
 					);
 
-				else if (status == NODE_HIBERNATE)
+					restart_calculator(); // going hot
+
+				} else if (status == NODE_HIBERNATE)
 					xbee_unicast(
 						"<Node|1|STS|2>\r\n", 
 							"5100",
@@ -180,7 +190,7 @@ void timers_init(void){
 	TACTL |= MC_2; // continuous op. mode
 }
 
-void init_calculator(void){
+void restart_calculator(void){
 	ADC10CTL0 |= ENC + ADC10SC; 
 	while (ADC10CTL1 & ADC10BUSY);
 	pVal = ADC10MEM;
@@ -189,8 +199,8 @@ void init_calculator(void){
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void CCR0_ISR(void){
 	int nVal, der;
-/*
-	if (status == NODE_WORKING){
+	
+	if (status == NODE_ACTIVE){
 		ADC10CTL0 |= ENC + ADC10SC; 
 		while (ADC10CTL1 & ADC10BUSY);
 		nVal = ADC10MEM;
@@ -200,12 +210,12 @@ __interrupt void CCR0_ISR(void){
 			der *= (-1); // |abs|: only care about changes
 
 		if (der >= DER_THRESH){ // major change
-			status = NODE_GOT_SOMETHING;
-			P1OUT |= LED;
+			status = NODE_NOTIFY_EVENT;
+			P1OUT |= RED;
 		} else
 			pVal = nVal; 
 	}
-*/
+	
 	TA0R = 0;
 }
 
