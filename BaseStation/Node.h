@@ -6,6 +6,11 @@
 #define NETWORK_ROUTER 			(0x01<<1)
 #define NETWORK_END_DEVICE 	(0x01<<2)
 
+#define NODE_STAND_BY 	0
+#define NODE_ACTIVE 		1
+#define NODE_HIBERNATE 	2
+#define NODE_UNKNOWN		(-1)
+
 #include <string>
 
 class Node {
@@ -52,6 +57,19 @@ public:
 	uint8_t isRouter(void);
 	uint8_t isEndDevice(void);
 	uint8_t getNetworkRole(void);
+	
+	// parses status command received from node
+	int parse_status(const char *payload);
+	
+	// Node state control
+	int sleep(const char *tty); // node hibernates
+	int standBy(const char *tty); // set stand by
+	int active(const char *tty); // node is now active
+	int getState(const char *tty); // returns current state
+
+	int isActive(const char *tty);
+	int isSleeping(const char *tty);
+	int isInStandBy(const char *tty);
 
 	// sends required message as unicast
 	// returns -1 in case of failure

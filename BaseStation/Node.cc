@@ -299,12 +299,34 @@ uint8_t Node::_checksum(const char *frame){
 	return (uint8_t)(0xFF-sum);
 }
 
-void Node::sleep(void){
-	printf("%s << sleep !!\n", getATMY().c_str());
+int Node::sleep(const char *tty){
+	unicast(tty, "0000", getATMY().c_str(), "NODE_HIBERNATE\r\n");
+	//parse_status();
+	return 0;
 }
 
-void Node::wakeup(void){
-	printf("%s << wakeup !!\n", getATMY().c_str());
+int Node::standBy(const char *tty){
+	unicast(tty, "0000", getATMY().c_str(), "NODE_STAND_BY\r\n");
+	//parse_status();
+	return 0;
+}
+
+int Node::active(const char *tty){
+	unicast(tty, "0000", getATMY().c_str(), "NODE_ACTIVE\r\n");
+	//parse_status();
+	return 0;
+}
+
+int Node::getState(const char *tty){
+	unicast(tty, "0000", getATMY().c_str(), "NODE_STATUS\r\n");
+	//parse_status();
+	return 0;
+}
+
+int parse_status(const char *payload){
+	//"<Node|i|STS|i>"
+	//"<Node|i|STS|-1|extra>"
+	return 0;
 }
 
 std::string Node::getATID(void){
@@ -361,4 +383,16 @@ void Node::_setATGT(int gt){
 
 int Node::getATGT(void){
 	return _ATGT;
+}
+
+int Node::isActive(const char *tty){
+	return 0;
+}
+
+int Node::isSleeping(const char *tty){
+	return 0;
+}
+
+int Node::isInStandBy(const char *tty){
+	return 0;
 }
