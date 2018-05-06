@@ -3,10 +3,11 @@
 
 #define BUFSIZE 64
 
-#define NODE_STAND_BY 	0 
-#define NODE_ACTIVE 		1
-#define NODE_HIBERNATE 	2
-#define NODE_UNKNOWN		(-1)
+#define NODE_STAND_BY 		0 
+#define NODE_ACTIVE 			1
+#define NODE_HIBERNATE 		2
+#define NODE_NOTIFY_EVENT 	3
+#define NODE_UNKNOWN			(-1)
 
 // initializes UART for XBEE communcations
 // notifies BS we're live when done
