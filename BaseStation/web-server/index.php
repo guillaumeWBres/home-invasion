@@ -1,14 +1,50 @@
 <meta charset="utf-8">
 <html>
-	<script charset="utf-8" src="d3/d3.min.js"></script>
 	<link rel="stylesheet" href="fullcalendar-3.9.0/fullcalendar.css"/>
 	<script src="fullcalendar-3.9.0/lib/jquery.min.js"></script>
 	<script src="fullcalendar-3.9.0/lib/moment.min.js"></script>
 	<script src="fullcalendar-3.9.0/fullcalendar.min.js"></script>
 
-	<script src="xml-http-request.js"></script>
-
 	<style>
+
+		.tab {
+			float: left;
+			border: 1px solid #ccc;
+			background-color: #f1f1f1;
+			width: 30%;
+			height: 300px;
+		}
+
+		.tab button {
+			display: block;
+			background-color: inherit;
+			color: black;
+			width: 100%;
+			text-align: left;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 14px 16px;
+			transition: 0.3s;
+		}
+
+		.tab button:hover {
+			background-color: #ddd;
+		}
+
+		.tab button.active {
+			background-color: #ccc;
+		}
+
+		.tabcontent {
+			display: none;
+			margin-top: 10px;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			border-top: none;
+			float: right;
+			width: 60%;
+		}
 
 		.header {
 			padding: 10px;
@@ -16,36 +52,9 @@
 			text-align: center;
 		}
 
-		.calendarColumn {
-			float: right;
-			padding: 10px;
-			text-align: center;
-			width: 40%
-			margin-top: 10px;
-			margin-bottom: 10px;
-		}
-
-		.calendarCardEffect {
-			border-radius: 10px;
-			border: 2px black solid;
-			padding: 10px;
-			margin-top: 0;
-		}
-		
 		#calendar {
 			max-width: 800px;
 			margin: 0 auto;
-		}
-
-		.cardEffect {
-			border-radius: 10px;
-			border: 2px black solid;
-			padding: 5px;
-		}
-
-		.networkColumn {
-			float: left;
-			width: 55%;
 		}
 
 		body {
@@ -56,6 +65,7 @@
 		}
 		
 		table {
+			float: right;
 			width: 40%;
 			border-collapse: collapse;
 			margin-top: 15px;
@@ -74,7 +84,7 @@
 		td, th {
 			padding: 6px;
 			border: 1px solid #ccc;
-			text-align: left;
+			text-align: center;
 		}
 
 		th.des:after {
@@ -89,24 +99,20 @@
 			padding: 20px;
 			text-align: center;
 			margin-top: 20px;
+			float: left;
+			width: 30%;
 		}
 	
-		.footerCardEffect {
-			background-color: white;
-			border-radius: 10px;
-			border: 2px black solid;
-			padding: 10px;
-			margin-top: 10px;
-		}
-
 		.mapArea {
-			margin-top: 10px;
+			margin-top: 20px;
 			padding: 5px;
+			float: right;
 		}
 
 	</style>
 
 	<head>
+		<script src="http://d3js.org/d3.v3.js"></script>
 		
 		<script>
 			// page has been loaded: request events from .db	
@@ -124,6 +130,7 @@
 					},
 
 					defaultView: "month", // weekly agenda only
+					slotEventOverlap: true,
 					navLinks: false, // remove navigation bar
 					editable: true,
 					selectable: true,
@@ -163,8 +170,6 @@
 							click: function(){
 								$('#calendar').fullCalendar('next');
 								var view = $('#calendar').fullCalendar('getView');
-								//alert(view.start.format('YYYY-MM-DD'));
-								//alert(view.end.format('YYYY-MM-DD'));
 							},
 						},
 					},
@@ -173,7 +178,7 @@
 						url: 'events.php',
 						type: 'POST',
 						data: function(){
-							// builds proper POST parameters for JQuery 
+							// builds proper POST parameters for AJAX 
 							// vStart: first entry of current view 
 							// vEnd: last entry of current view
 							// 'YYYY-MM-DD' format used for mysql->query
@@ -257,6 +262,8 @@
 					},
 
 				}); // calendar constructor
+
+				tabManagement(10,'networkMgmt');
 			}); // docIsReady
 		</script>
 	</head>
@@ -265,90 +272,87 @@
 
 		<div class="header">
 			<h1> Welcome ! </h1>
-			<?php echo 'Hello from PHP'; ?>
 		</div>
 
-		<table id="networkStatusTable">
-			<tr>
-				<th>Node</th>
-				<th>Status</th>
-			</tr>
-			<tr>
-				<td>Base</td>
-				<td>OK</td>
-			</tr>
-		</table>
+		<div class="tab">
+			<button class="tablinks" onclick="tabManagement(event, 'networkMgmt')">Network management</button>
+			<button class="tablinks" onclick="tabManagement(event, 'scheduler')">Scheduler</button>
+			<button class="tablinks" onclick="tabManagement(event, 'plot')">Statistics</button>
+
+			<script>
+				function tabManagement(event, tab){
+					var i, tabcontent, tablink;
+
+					tabcontent = document.getElementsByClassName("tabcontent");
+					for (i=0; i<tabcontent.length; i++)
+						tabcontent[i].style.display = "none";
+
+					tablinks = document.getElementsByClassName("tablinks");
+					for (i=0; i<tablinks.length; i++)
+						tablinks[i].className = tablinks[i].className.replace(" active", "");
+
+					document.getElementById(tab).style.display = "block";
+					//event.currentTarget.className += " active";
+				}
+			</script>
+		</div>
+
+		<div id="networkMgmt" class="tabcontent">
+			<table id="networkStatusTable">
+				<tr>
+					<th>Node</th>
+					<th>Status</th>
+				</tr>
+				<tr>
+					<td>Base</td>
+					<td>OK</td>
+				</tr>
+			</table>
+			
+			<table>
+				<tr>
+					<th> Network (PAN) ID </th>
+					<th> Base station ID </th>
+					<th> Power management </th>
+					<th> Encryption </th>
+				</tr>
+				<tr>
+					<td> <input type="text" name="networkPanID" form="networkPanID" value="5110"/> </td>
+					<td> <input type="text" name="baseID" form="baseID" value="1001"/> </td>
+					<td> 
+						<input type="radio" name="powerMgmtRadio" value="disabled" checked/> Disabled 
+						<input type="radio" name="powerMgmtRadio" value="cyclic"/> Cyclic hibernation 
+					</td>
+					<td> <input type="checkbox" name="encryptionRadio" form="encryptionRadio"/> </td>
+				</tr>
+			</table>
+				
+			<div id="mapArea" class="tabcontent">
+				<script src="network.js"></script>
+			</div>
 		
-		<table>
-			<tr>
-				<th> Network (PAN) ID </th>
-				<th> Base station ID </th>
-				<th> Encryption </th>
-			</tr>
-			<tr>
-				<td> <input type="text" name="PANID" form="PANIDform" value="5110"/> </td>
-				<td> <input type="text" name="BaseNID" form="BaseNIDform" value="1001"/> </td>
-				<td> <input type="checkbox" name="Encrypt" form="encryptFrom"/> </td>
-			</tr>
-		</table>
-
-		<div class="cardEffect">
-			<p> Power saving options </p>
-			<form>
-				<form method="POST" id="PANIDform"></form>
-				<form method="POST" id="BaseNIDform"></form>
-				<input type="radio" name="sleepmode" value="disabled" checked> Disabled<br>
-				<input type="radio" name="sleepmode" value="pin-enabled"> Pin enabled<br>
-				<input type="radio" name="sleepmode" value="cyclic"> Cyclic<br>
-				<input type="radio" name="sleepmode" value="cyclic-wakeup"> Wakable cyclic<br>
-			</form>
 		</div>
-
-		<div class="cardEffect">
+		
+		<div id="scheduler" class="tabcontent">
 			<p> Active time zones </p>
 			<div id="calendar"></div>
 		</div>
 
-		<div class="footer">
+		<style>
+			.heatMapRect {
+				stroke: #E6E6E6;
+				stroke-width: 2px;
+			}
+
+		</style>
+		<div id="chart"></div>
+		<div id="dataset-picker"></div>
+		<script src="plots.js"></script>
+		
+		<div id="footer" class="creditsTab">
 			<p><em>This project is still work in progress</em></p>
 			<p><a href="http://github.com/gwbres/home-automation">project-sources</a></p>
 		</div>
 		
-		<div class="mapArea">
-			<script src="mapDrawer.js"></script>
-		</div>
-
-		<script>
-	/*
-			// send request from Text
-			function sendRequest(str){
-				var xmlhttp = new XMLHttpRequest();
-				xmlhttp.onreadystatechange = function(){
-					if (this.readyState == 4 && this.status == 200){
-						alert(this.responseText);
-					}
-				};
-				xmlhttp.open("GET", "ajax.php?q=getdB");
-				xmlhttp.send();
-			};
-
-			// post request on click
-			$('.getdBbutton').click(function(){
-				var value = $(this).val();
-				var ajaxurl = 'ajax.php';
-				var data = {'action': 'getdB'};
-				$.post(ajaxurl, data, function(response){
-					alert("action performed successfully");
-				});
-			});
-	*/
-		</script>
-		
-		<form action="index.php" method="post">
-			<input type="submit" class="getdBbutton" name="getdB" value="getdB" />
-			<input type="text" onkeyup="sendRequest(this.value)">
-		</form>
-		
-
 	</body>
 </html>
