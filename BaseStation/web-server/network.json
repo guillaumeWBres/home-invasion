@@ -1,0 +1,21 @@
+{
+	"Nodes": [
+		{
+			"ATMY": "5100",
+			"Status": "IDLE",
+			"Role": "Coordinator"
+		},
+		{
+			"ATMY": "5101", 
+			"Status": "IDLE", 
+			"Role": "End device"
+		},
+		{
+			"ATMY": "5102",
+			"Status": "IDLE",
+			"Role": "End device"
+		}
+	],
+
+	"PAN_ID": "5110"
+}
