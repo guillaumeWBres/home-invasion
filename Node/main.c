@@ -8,12 +8,6 @@
 
 #define SELF_ID	"5101"
 
-volatile uint8_t status;
-#define STATUS_IDLE					0x00
-#define STATUS_WORKING				0x01
-#define STATUS_GOT_SOMETHING 		0x02
-#define STATUS_WAIT_ACK				0x03
-
 #define TA1_MOD  13733
 volatile int ta1_count;
 
@@ -24,85 +18,125 @@ volatile int wdt_count;
 #define DER_THRESH	(10*1024/100) // 5% variation will trigger
 volatile int 			pVal;
 
-#define LED				BIT0 // P1.0: debouncer
-
-volatile int rx_ptr;
+#define RED					BIT1 // P1.0
+#define GREEN				BIT6 // P2.6
 
 void adc_init(void);
 void uart_init(void);
 void timers_init(void);
 void platform_init(void);
 
+// initializes 1st derv. calculator 
+void restart_calculator(void);
+
 int main(void){
-	char buffer[BUFSIZE];
+	int status;
 	platform_init();
 	
 	// PAN ID: 5110
 	// MY ID: 5100+node(id)
 	// default DEST: BS, ie. 5100
-	xbee_setup("5110", "5101", "5100"); 
+	//xbee_setup("5110", "5101", "5100"); 
 
 	xbee_unicast(
-		"Node(1) is now working\r\n", "5100", 
-			strlen("Node(1) is now working\r\n")+2
+		"<Node|1|STS|0>\r\n", 
+			"5100",
+				strlen("<Node|1|STS|0>\r\n")+2
 	);
 
-	status = STATUS_WORKING; // will eventually be set by BS 
-	
-	// initialize der. calculator
-	ADC10CTL0 |= ENC + ADC10SC; 
-	while (ADC10CTL1 & ADC10BUSY);
-	pVal = ADC10MEM;
+	status = NODE_STAND_BY;
 
 	while(1){
+		
 		switch (status){
+			case NODE_ACTIVE:
+				P1OUT |= RED;
+				P2OUT &= ~GREEN;
 
-			case STATUS_GOT_SOMETHING:
-
-				// notify BS	
-				xbee_unicast(
-					"Node(1) detected something\r\n", "5100",
-						strlen("Node(1) detected something\r\n")+2
-				);
-
-				status = STATUS_WAIT_ACK;
-
-				// enable RX
-				rx_ptr &= 0;
-				UC0IE |= UCA0RXIE;
-				xbee_wait_instructions(buffer);
-				break;
-
-			case STATUS_WAIT_ACK:
-				if (buffer[0] == 'A'){
-
+				status = xbee_wait_instructions();
+				if (status == NODE_HIBERNATE)
 					xbee_unicast(
-						"Node(1) going back to work..\r\n", "5100",
-							strlen("Node(1) going back to work..\r\n"+2)
+						"<Node|1|STS|2>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|2>\r\n")+2
+					);
+				
+				else if (status == NODE_STAND_BY)
+					xbee_unicast(
+						"<Node|1|STS|0>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|0>\r\n")+2
 					);
 
-					status = STATUS_WORKING;
-					P1OUT &= ~LED;
-	
-					ADC10CTL0 |= ENC + ADC10SC; 
-					while (ADC10CTL1 & ADC10BUSY);
-					pVal = ADC10MEM;
-				}
+				else
+					xbee_unicast(
+						"<Node|1|STS|-1|Active>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|-1|Active>\r\n")+2
+					);
+
+				break;
+			
+			case NODE_HIBERNATE:
+				P1OUT &= ~RED;
+				P2OUT |= GREEN;
+				
+				status = xbee_wait_instructions();
+				if (status == NODE_ACTIVE)
+					xbee_unicast(
+						"<Node|1|STS|1>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|1>\r\n")+2
+					);
+
+				else if (status == NODE_STAND_BY)
+					xbee_unicast(
+						"<Node|1|STS|0>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|0>\r\n")+2
+					);
+
+				else
+					xbee_unicast(
+						"<Node|1|STS|-1|Hibernation>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|-1|Hibernation>\r\n")+2
+					);
 				break;
 
+			case NODE_STAND_BY:
 			default:
-			case STATUS_IDLE:
-			case STATUS_WORKING:
-				// sleep?
+				P1OUT &= ~RED;
+				P2OUT |= GREEN;
+
+				status = xbee_wait_instructions();
+				if (status == NODE_ACTIVE)
+					xbee_unicast(
+						"<Node|1|STS|1>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|1>\r\n")+2
+					);
+
+				else if (status == NODE_HIBERNATE)
+					xbee_unicast(
+						"<Node|1|STS|2>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|2>\r\n")+2
+					);
+
+				else
+					xbee_unicast(
+						"<Node|1|STS|-1|StandBy>\r\n", 
+							"5100",
+								strlen("<Node|1|STS|-1|StandBy>\r\n")+2
+					);
 				break;
 		}
 	}
-
 	return 0;
 }
 
 void platform_init(void){
-	if (CALBC1_1MHZ == 0xff || CALDCO_1MHZ == 0xff) {while(1);};
 	BCSCTL1 = CALBC1_1MHZ;
 	DCOCTL = CALDCO_1MHZ;
 	WDTCTL = WDTPW + WDTHOLD;
@@ -124,8 +158,11 @@ void adc_init(void){
 	ADC10AE0 |= MIC;
 	ADC10CTL1 &= ~ADC10DF; // unsigned for thresh. validity
 	
-	P1DIR |= LED;
+	P1DIR |= RED;
 	P1OUT &= 0x00;
+	
+	P2DIR |= GREEN;
+	P2OUT &= 0x00;
 }
 
 void timers_init(void){
@@ -143,11 +180,17 @@ void timers_init(void){
 	TACTL |= MC_2; // continuous op. mode
 }
 
+void init_calculator(void){
+	ADC10CTL0 |= ENC + ADC10SC; 
+	while (ADC10CTL1 & ADC10BUSY);
+	pVal = ADC10MEM;
+}
+
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void CCR0_ISR(void){
 	int nVal, der;
-
-	if (status == STATUS_WORKING){
+/*
+	if (status == NODE_WORKING){
 		ADC10CTL0 |= ENC + ADC10SC; 
 		while (ADC10CTL1 & ADC10BUSY);
 		nVal = ADC10MEM;
@@ -157,12 +200,12 @@ __interrupt void CCR0_ISR(void){
 			der *= (-1); // |abs|: only care about changes
 
 		if (der >= DER_THRESH){ // major change
-			status = STATUS_GOT_SOMETHING;
+			status = NODE_GOT_SOMETHING;
 			P1OUT |= LED;
 		} else
 			pVal = nVal; 
 	}
-
+*/
 	TA0R = 0;
 }
 
@@ -187,15 +230,15 @@ __interrupt void watchdog_timer(void){
 		switch(status) {
 			// extern rx_ptr
 			rx_ptr &= 0; // will wake up() if sleeping?
-			case STATUS_IDLE:
-			case STATUS_WORKING:
+			case NODE_IDLE:
+			case NODE_WORKING:
 				_BIS_SR(LPM3_bits + GIE); 
 				WDTCTL = WDTPW + WDTHOLD;
 				wdt_cont &= 0;
 				break;
 			
-			case STATUS_NOT_NOTIFIED:
-			case STATUS_NOTIFIED_WAIT_ACK:
+			case NODE_NOT_NOTIFIED:
+			case NODE_NOTIFIED_WAIT_ACK:
 			default:
 				break;
 		}

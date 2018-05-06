@@ -10,7 +10,6 @@
 
 char rx_buffer[BUFSIZE];
 volatile int rx_ptr;
-volatile int rx_size;
 volatile char rx_done;
 
 char tx_buffer[BUFSIZE];
@@ -22,7 +21,7 @@ static char DL[4];
 
 void xbee_init(void){
 	P1DIR |= RX+TX; // XBEE uart
-	P1DIR |= SLEEP_PIN; // XBEE ctrl
+	//P1DIR |= SLEEP_PIN; // XBEE ctrl
 	P1SEL |= RX+TX;
 	P1SEL2 |= RX+TX;
 	
@@ -54,23 +53,30 @@ int xbee_confirmed_command(const char *cmd, const int size){
 	return 0;
 }
 
-void xbee_wait_instructions(char *buffer){
+int xbee_wait_instructions(void){
 	rx_ptr &= 0;
 	rx_done &= 0x00;
 	UC0IE |= UCA0RXIE;
-	_BIS_SR(LPM0_bits + GIE);
-	strcpy(buffer, rx_buffer);
+	//_BIS_SR(LPM0_bits + GIE);
+	while (!rx_done);
+
+	// identify instructions
+	if (identify_command(rx_buffer, "NODE_STAND_BY") == 0)
+		return NODE_STAND_BY;
+	else if (identify_command(rx_buffer, "NODE_HIBERNATE") == 0)
+		return NODE_HIBERNATE;
+	else if (identify_command(rx_buffer, "NODE_ACTIVE") == 0)
+		return NODE_ACTIVE;
+	else
+		return NODE_UNKNOWN;
 }
 
 void xbee_setup(const char *id, const char *my, const char *dl){
 	char buffer[16];
 
 	__delay_cycles(1000000);
-	xbee_send_command("+++", 3); // enter CMD mode
-	rx_ptr &= 0;
-	rx_done &= 0x00;
-	UC0IE |= UCA0RXIE;
-	while (!rx_done);
+	// enter AT command mode
+	xbee_confirmed_command("+++", 3);
 
 	// set Network (PAN) ID
 	strcpy(buffer, "ATID");
@@ -99,31 +105,20 @@ void xbee_setup(const char *id, const char *my, const char *dl){
 // ATSO: sleep option: 0: always wake up for ST time, 1: sleep entire SN*SP time
 
 	xbee_confirmed_command("ATCN\r", 5);
+	__delay_cycles(100000); // give module a break
 }
 
 void xbee_broadcast(const char *payload, const int size){
 	if (strcmp(DL, "FFFF") != 0){
 		// configure for broadcast 
 		__delay_cycles(1000000);
-		xbee_send_command("+++", 3); // enter CMD mode
-		rx_ptr &= 0;
-		rx_done &= 0x00;
-		UC0IE |= UCA0RXIE;
-		while (!rx_done);
+		xbee_confirmed_command("+++", 3); // enter CMD mode
 
 		strcpy(DL, "FFFF"); // store internally for next unicast/broadcast
-		xbee_send_command("ATDLFFFF\r", 9); 
+		xbee_confirmed_command("ATDLFFFF\r", 9); 
 
-		rx_ptr &= 0;
-		rx_done &= 0x00;
-		UC0IE |= UCA0RXIE;
-		while (!rx_done);
-
-		xbee_send_command("ATCN\r", 5);
-		rx_ptr &= 0;
-		rx_done &= 0x00;
-		UC0IE |= UCA0RXIE;
-		while (!rx_done);
+		xbee_confirmed_command("ATCN\r", 5);
+		__delay_cycles(100000); // give module a break
 	} 
 	xbee_send_command(payload, size);
 }
@@ -142,6 +137,7 @@ void xbee_unicast(const char *payload, const char *dl, const int size){
 		xbee_confirmed_command(buffer, 9); 
 
 		xbee_confirmed_command("ATCN\r", 5);
+		__delay_cycles(100000); // give module a break
 	} 
 	xbee_send_command(payload, size);
 }
@@ -161,6 +157,23 @@ void xbee_sleep(void){
 
 void xbee_wakeup(void){
 		P1OUT &= ~SLEEP_PIN;
+}
+
+int identify_command(char *buffer, const char *model){
+	int i;
+	int size;
+
+	if (strlen(buffer) < strlen(model))
+		size = strlen(buffer);
+	else
+		size = strlen(model);
+
+	for (i=0; i<size; i++){
+		if (buffer[i] != model[i])
+			return NODE_UNKNOWN;
+	}
+	
+	return 0;
 }
 
 #pragma vector = USCIAB0TX_VECTOR
@@ -184,7 +197,7 @@ __interrupt void USCI0RX_ISR(void){
 	if (UCA0RXBUF == '\r'){
 		rx_done |= 0x01;
 		UC0IE &= ~UCA0RXIE;
-		_BIC_SR(LPM0_bits); // wakeup if needed
+		//_BIC_SR(LPM0_bits); // wakeup if needed
 	} else
 		rx_done &= 0x00;
 }

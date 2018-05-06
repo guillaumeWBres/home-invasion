@@ -3,6 +3,11 @@
 
 #define BUFSIZE 64
 
+#define NODE_STAND_BY 	0 
+#define NODE_ACTIVE 		1
+#define NODE_HIBERNATE 	2
+#define NODE_UNKNOWN		(-1)
+
 // initializes UART for XBEE communcations
 // notifies BS we're live when done
 void xbee_init(void);
@@ -30,7 +35,10 @@ void xbee_broadcast(const char *payload, const int size);
 void xbee_unicast(const char *payload, const char *dl, const int size);
 
 // waits until a valid frame has been received
-void xbee_wait_instructions(char *buffer);
+// returns number of bytes received
+int xbee_wait_instructions(void);
+
+int identify_command(char *buffer, const char *model);
 
 // calculates checksum of given API frame
 uint8_t checksum(const char *API_frame);
