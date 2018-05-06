@@ -43,14 +43,34 @@ public:
 	// discovers all devices over this network 
 	int discoverDevices(const char *tty);
 
-	// sets all end devices to sleep/hibernation
-	void sleep(void);
+	// hibernation ctrl
+	// sets end device(s) in hibernation 
+	int sleep(const char *tty);
+	int sleep(const char *tty, Node n); 
+	int sleep(const char *tty, const char *id); 
 
-	// wakes all end devices up
-	void wakeup(void);
+	// stand by ctrl
+	// sets end device(s) in stand by state
+	int standBy(const char *tty);
+	int standBy(const char *tty, Node n);
+	int standBy(const char *tty, const char *id);
+
+	// active ctrl
+	// sets end device(s) in active mode
+	int active(const char *tty);
+	int active(const char *tty, Node n);
+	int active(const char *tty, const char *id);
+
+	// get list of currently active nodes
+	std::vector<Node> getActiveNodes(const char *tty);
+
+	// get list of currently sleeping nodes
+	std::vector<Node> getSleepingNodes(const char *tty);
+
+	// get list of nodes in stand by
+	std::vector<Node> getStandByNodes(const char *tty);
 
 private:
-	
 	vector<Node> nodes;
 
 };

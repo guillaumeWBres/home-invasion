@@ -11,6 +11,7 @@ using namespace std;
 #include "Node.h"
 
 Network::Network(void){
+	nodes.push_back(Node());
 }
 
 Network::Network(vector<Node> n){
@@ -134,18 +135,125 @@ int Network::discoverDevices(const char *tty){
 	return 0;
 }
 
-void Network::sleep(void){
+int Network::sleep(const char *tty){
 	for (int i=0; i<size(); i++){
 		if (nodes[i].isEndDevice()){
-			nodes[i].sleep();
+			nodes[i].sleep(tty);
 		}
 	}
+	return 0;
 }
 
-void Network::wakeup(void){
+int Network::sleep(const char *tty, Node n){
 	for (int i=0; i<size(); i++){
 		if (nodes[i].isEndDevice()){
-			nodes[i].wakeup();
+			if (nodes[i].getATMY() == n.getATMY())
+				nodes[i].sleep(tty);
 		}
 	}
+	return 0;
+}
+
+int Network::sleep(const char *tty, const char *id){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].getATMY() == id)
+				nodes[i].sleep(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::standBy(const char *tty){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			nodes[i].standBy(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::standBy(const char *tty, Node n){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].getATMY() == n.getATMY())
+				nodes[i].standBy(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::standBy(const char *tty, const char *id){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].getATMY() == id) 
+				nodes[i].standBy(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::active(const char *tty){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			nodes[i].active(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::active(const char *tty, Node n){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].getATMY() == n.getATMY())
+				nodes[i].active(tty);
+		}
+	}
+	return 0;
+}
+
+int Network::active(const char *tty, const char *id){
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].getATMY() == id) 
+				nodes[i].active(tty);
+		}
+	}
+	return 0;
+}
+
+vector<Node> Network::getActiveNodes(const char *tty){
+	vector<Node> result;
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].isActive(tty)){
+				result.push_back(nodes[i]);
+			}
+		}
+	}
+	return result;
+}
+
+vector<Node> Network::getSleepingNodes(const char *tty){
+	vector<Node> result;
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].isSleeping(tty)){
+				result.push_back(nodes[i]);
+			}
+		}
+	}
+	return result;
+}
+
+vector<Node> Network::getStandByNodes(const char *tty){
+	vector<Node> result;
+	for (int i=0; i<size(); i++){
+		if (nodes[i].isEndDevice()){
+			if (nodes[i].isInStandBy(tty)){
+				result.push_back(nodes[i]);
+			}
+		}
+	}
+	return result;
 }
