@@ -19,13 +19,12 @@ volatile uint8_t tx_done;
 
 static char DL[4];
 
+extern volatile int status;
+
 void xbee_init(void){
-	P1DIR |= RX+TX; // XBEE uart
-	//P1DIR |= SLEEP_PIN; // XBEE ctrl
+	P1DIR |= RX+TX; // XBEE/UART
 	P1SEL |= RX+TX;
 	P1SEL2 |= RX+TX;
-	
-	xbee_wakeup();
 	
 	UCA0CTL1 |= UCSSEL_2; // SMCLK
 	UCA0BR0 = 104; // 9600 B/s @ 1M
@@ -193,11 +192,16 @@ __interrupt void USCI0RX_ISR(void){
 		rx_ptr = 0;
 	else
 		rx_ptr++;
-
+		
 	if (UCA0RXBUF == '\r'){
 		rx_done |= 0x01;
 		UC0IE &= ~UCA0RXIE;
-		//_BIC_SR(LPM0_bits); // wakeup if needed
 	} else
 		rx_done &= 0x00;
+	
+	// wake up on USCI:RX activity
+	if (status == NODE_HIBERNATE){
+		status = NODE_STAND_BY;
+		__bic_SR_register_on_exit(LPM0_bits);
+	}
 }

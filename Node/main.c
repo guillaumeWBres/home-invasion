@@ -53,14 +53,17 @@ int main(void){
 				P2OUT &= ~GREEN;
 
 				status = xbee_wait_instructions();
-				if (status == NODE_HIBERNATE)
+				if (status == NODE_HIBERNATE){
 					xbee_unicast(
 						"<Node|1|STS|2>\r\n", 
 							"5100",
 								strlen("<Node|1|STS|2>\r\n")+2
 					);
-				
-				else if (status == NODE_STAND_BY)
+					
+					UC0IE |= UCA0RXIE; // will wake up on BS orders
+					_BIS_SR(LPM0_bits+GIE); // hibernate
+
+				} else if (status == NODE_STAND_BY)
 					xbee_unicast(
 						"<Node|1|STS|0>\r\n", 
 							"5100",
@@ -93,23 +96,16 @@ int main(void){
 							"5100",
 								strlen("<Node|1|STS|0>\r\n")+2
 					);
-
-				else
-					xbee_unicast(
-						"<Node|1|STS|-1|Hibernation>\r\n", 
-							"5100",
-								strlen("<Node|1|STS|-1|Hibernation>\r\n")+2
-					);
 				break;
 
 			case NODE_NOTIFY_EVENT:
-				status = NODE_STAND_BY;
 				// notify BS then stand by
 				xbee_unicast(
 					"<Node|1|STS|0|DetectionEvent>\r\n",
 						"5100",
 							strlen("<Node|1|STS|0|DetectionEvent>\r\n")+2
 				);
+				status = NODE_STAND_BY;
 				P1OUT &= ~RED;
 				break;
 
@@ -127,14 +123,17 @@ int main(void){
 
 					restart_calculator(); // going hot
 
-				} else if (status == NODE_HIBERNATE)
+				} else if (status == NODE_HIBERNATE){
 					xbee_unicast(
 						"<Node|1|STS|2>\r\n", 
 							"5100",
 								strlen("<Node|1|STS|2>\r\n")+2
 					);
 
-				else
+					UC0IE |= UCA0RXIE; // will wake up on BS orders
+					_BIS_SR(LPM0_bits+GIE); // hibernate
+
+				} else
 					xbee_unicast(
 						"<Node|1|STS|-1|StandBy>\r\n", 
 							"5100",
@@ -154,7 +153,7 @@ void platform_init(void){
 	adc_init();
 	timers_init();
 	xbee_init();
-	_BIS_SR(GIE);	
+	_BIS_SR(GIE);
 }
 
 void adc_init(void){
