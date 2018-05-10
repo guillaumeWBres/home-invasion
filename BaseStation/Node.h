@@ -24,30 +24,21 @@ public:
 
 	int to_file(std::string fp);
 
-	// returns PAN/Network ID
+	// controls XBEE parameters
 	std::string getATID(void);
-	
-	// returns self ID
 	std::string getATMY(void);
-	
-	// returns current Dest address (higher bits)
 	std::string getATDH(void);
-
-	// returns current Dest address (lower bits)
 	std::string getATDL(void);
 
-	// returns ATBD value (baud rate)
-	int getATBD(void);
-
-	// returns ATCT value (CMD mode timeout)
-	int getATCT(void);
-
-	// returns ATGT value (CMD gard time)
-	int getATGT(void);
+	// controls XBEE parameters
+	void setATID(std::string id);
+	void setATMY(std::string my);
+	void setATDL(std::string dl);
+	void setATDH(std::string dh);
 
 	// serializes self in .csv format
 	// indent: current indentation level
-	std::string to_csv(int indent);
+	std::string to_csv(const char *tty, int indent);
 
 	// prints self in human readable format
 	void print(void);
@@ -59,7 +50,7 @@ public:
 	uint8_t getNetworkRole(void);
 	
 	// parses status command received from node
-	int parse_status(const char *payload);
+	int parseStatus(char *message, char *extra);
 	
 	// Node state control
 	int sleep(const char *tty); // node hibernates
@@ -102,24 +93,20 @@ public:
 	// failure: baud rate mismatch?
 	int readSettings(const char *tty);
 
-	// sets XBEE module up
-	// with specified PAN (Network) ID,
-	// MYID, Dest ADDR
-	// and CT time value
-	// returns -1 in case of failure
-	int setSettings(const char *tty, 
-		const char *ID, const char *MY, 
-			const char *DH, const char *DL, 
-				int CT, int GT
-	);
-
-	int send_API_frame(const uint16_t size);
+	// prints current XBEE settings using serial port
+	int XBEE_settings(const char *tty);
 
 	// sets node to sleep mode
 	void sleep(void);
 
 	// wakes node up
 	void wakeup(void);
+
+	void setBaudRate(int bd);
+	int getBaudRate(void);
+
+	void setGuardTime(int gt);
+	int getGuardTime(void);
 
 private:
 	// role within network
@@ -129,17 +116,6 @@ private:
 	std::string _ATID; // PAN / Network ID
 	std::string _ATMY; // self ADDR
 	std::string _ATDL, _ATDH; // dest ADDR
-	int _ATBD; // Baud rate
-	int _ATCT; // CMD dead time
-	int _ATGT; // AT CMD gard time
-
-	void _setATID(std::string id);
-	void _setATMY(std::string my);
-	void _setATDL(std::string dl);
-	void _setATDH(std::string dh);
-	void _setATCT(int ct);
-	void _setATBD(int bd);
-	void _setATGT(int gt);
 
 	// evaluates checksum of current API frame 
 	uint8_t _checksum(const char *APIframe);

@@ -19,7 +19,7 @@ Node::Node(uint8_t role){
 	_setNetworkRole(role);
 }
 
-std::string Node::to_csv(int indent){
+std::string Node::to_csv(const char *tty, int indent){
 	std::string result;
 	
 	for (int i=0; i<indent; i++)
@@ -47,7 +47,9 @@ std::string Node::to_csv(int indent){
 	
 	for (int i=0; i<indent; i++)
 		result.append("\t");
-	result.append("\t<STS>OK</STS>\n");
+	result.append("\t<STS>WIP");
+	//result.append(itoa(getState(tty), 10));
+	result.append("</STS>\n");
 
 	for (int i=0; i<indent; i++)
 		result.append("\t");
@@ -57,12 +59,10 @@ std::string Node::to_csv(int indent){
 }
 
 void Node::print(void){
-	cout << "ATBD: " << getATBD() << "\n";
 	cout << "PAN ID: " << getATID() << "\n";
 	cout << "ATMY: " << getATMY() << "\n";
 	cout << "ATDH: " << getATDH() << "\n";
 	cout << "ATDL: " << getATDL() << "\n";
-	cout << "ATCT: " << getATCT() << "\n";
 }
 
 uint8_t Node::isCoordinator(void){
@@ -165,11 +165,11 @@ int Node::unicast(const char *tty,
 		
 		sprintf(buffer, "ATDH%s\r", dh); 
 		send_command(fd, buffer);
-		_setATDH(dh);
+		setATDH(dh);
 
 		sprintf(buffer, "ATDL%s\r", dl); 
 		send_command(fd, buffer);
-		_setATDL(dl);
+		setATDL(dl);
 
 		send_command(fd, "ATCN\r");
 	}
@@ -179,7 +179,7 @@ int Node::unicast(const char *tty,
 	return size;
 }
 
-int Node::readSettings(const char *tty){
+int Node::XBEE_settings(const char *tty){
 	if (isCoordinator()){ // direct HW access
 		char answer[64];
 		int fd = open(tty, O_RDWR);
@@ -191,104 +191,27 @@ int Node::readSettings(const char *tty){
 
 		send_command(fd, "+++"); usleep(500000); // enter CMD mode
 		send_command_readback(fd, "ATBD\r", answer);  // check baudrate
-		_setATBD(atoi(answer));
+		printf("ATBD: %s\n", answer);
 		
 		send_command_readback(fd, "ATID\r", answer);  // PAN/Network ID 
-		_setATID(string(answer));
+		printf("ATID: %s\n", answer);
 		
 		send_command_readback(fd, "ATMY\r", answer);  // self ID 
-		_setATMY(string(answer));
+		printf("ATMY: %s\n", answer);
 		
 		send_command_readback(fd, "ATDH\r", answer);  // dest ID 
-		_setATDH(string(answer));
+		printf("ATDH: %s\n", answer);
 		
 		send_command_readback(fd, "ATDL\r", answer);  // dest ID 
-		_setATDL(string(answer));
+		printf("ATDL: %s\n", answer);
 
-		send_command_readback(fd, "ATCT\r", answer); // CMD mode timeout
-		_setATCT(atoi(answer));
+		send_command(fd, "ATCN\r");
 
-		send_command_readback(fd, "ATGT\r", answer); // AT cmd gard time
-		_setATGT(atoi(answer));
-
-		send_command(fd, "ATCN\r"); // we're done
 		close(fd);
 		return 0;
 	}
 
 	return -1;
-}
-
-int Node::setSettings(const char *tty, 
-	const char *ID, const char *MY, 
-		const char *DH, const char *DL, 
-			int CT, int GT
-){
-	if (isCoordinator()){ // direct HW access
-		char cmd[64];
-		int fd = open(tty, O_RDWR);
-
-		if (fd < 0){
-			printf("failed to open %s port\n", tty);
-			return -1;
-		}
-
-		send_command(fd, "+++"); // enter CMD mode
-		// set CT: CMD mode timeout value
-		sprintf(cmd, "ATCT%d\r", CT);
-		send_command(fd, cmd);
-		printf("%s\n", cmd);
-		_setATCT(CT);
-
-		// set GT: cmd gard time
-		sprintf(cmd, "ATGT%d\r", GT);
-		send_command(fd, cmd);
-		_setATGT(GT);
-
-		// set PAN ID
-		sprintf(cmd, "ATID%s\r", ID);
-		send_command(fd, cmd); 
-		printf("%s\n", cmd);
-		_setATID(string(ID));
-
-		// set MY ID
-		sprintf(cmd, "ATMY%s\r", MY);
-		send_command(fd, cmd); 
-		printf("%s\n", cmd);
-		_setATMY(string(MY));
-
-		// set DH ADDR
-		sprintf(cmd, "ATDH%s\r", DH);
-		send_command(fd, cmd); 
-		printf("%s\n", cmd);
-		_setATDH(string(DH));
-
-		// set DL ADDR
-		sprintf(cmd, "ATDL%s\r", DL);
-		send_command(fd, cmd); 
-		printf("%s\n", cmd);
-		_setATDL(string(DL));
-
-		send_command(fd, "ATCN\r"); // we're done
-		printf("ATCN\n");
-
-		close(fd);
-		return 0;
-	}
-		
-	return -1;
-}
-
-int Node::send_API_frame(const uint16_t size){
-	char frame[64];
-	int _offset = 0;
-	uint8_t MSB, LSB;
-//	strcpy(frame+0, 0x7E, 1);
-	MSB = (size>>4)&0x0F;
-	LSB = (size)&0x0F;
-//	strcpy(frame+1, MSB, 2);
-//	strcpy(frame+3, LSB, 2);
-	return 0;
 }
 
 uint8_t Node::_checksum(const char *frame){
@@ -323,17 +246,28 @@ int Node::getState(const char *tty){
 	return 0;
 }
 
-int parse_status(const char *payload){
+int parse_status(char *payload, char *extra){
 	//"<Node|i|STS|i>"
 	//"<Node|i|STS|-1|extra>"
-	return 0;
+	int status;
+	char *token;
+	token = strtok(payload, "|");
+	// check ID match
+	token = strtok(NULL, "|");
+	token = strtok(NULL, "|");
+	status = atoi(token);
+	if (status == -1){
+		token = strtok(NULL, "|");
+		strcpy(extra, token);
+	}
+	return status;
 }
 
 std::string Node::getATID(void){
 	return _ATID;
 }
 
-void Node::_setATID(string id){
+void Node::setATID(string id){
 	_ATID = id;
 }
 
@@ -341,7 +275,7 @@ std::string Node::getATMY(void){
 	return _ATMY;
 }
 
-void Node::_setATMY(string my){
+void Node::setATMY(string my){
 	_ATMY = my;
 }
 
@@ -349,7 +283,7 @@ std:: string Node::getATDL(void){
 	return _ATDL;
 }
 
-void Node::_setATDL(string dl){
+void Node::setATDL(string dl){
 	_ATDL = dl;
 }
 
@@ -357,32 +291,8 @@ std::string Node::getATDH(void){
 	return _ATDH;
 }
 
-void Node::_setATDH(string dh){
+void Node::setATDH(string dh){
 	_ATDH = dh;
-}
-
-int Node::getATBD(void){
-	return _ATBD;
-}
-
-void Node::_setATBD(int bd){
-	_ATBD = bd;
-}
-
-int Node::getATCT(void){
-	return _ATCT;
-}
-
-void Node::_setATCT(int ct){
-	_ATCT = ct;
-}
-
-void Node::_setATGT(int gt){
-	_ATGT = gt;
-}
-
-int Node::getATGT(void){
-	return _ATGT;
 }
 
 int Node::isActive(const char *tty){
