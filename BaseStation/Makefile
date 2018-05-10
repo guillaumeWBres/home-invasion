@@ -18,8 +18,9 @@ endif
 
 OBJ = main
 SRCS = BaseStation.cc
-SRCS += Network.cc
 SRCS += Node.cc
+SRCS += Network.cc
+SRCS += TimeZone.cc
 
 LDFLAGS += -I/usr/include/mysql
 LDFLAGS += -L/usr/include/mysql
