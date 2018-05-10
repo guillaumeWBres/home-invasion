@@ -14,6 +14,5 @@ using namespace std;
 int main(int argc, char **argv){
 	BaseStation bs = BaseStation();
 	bs.print();
-	bs.retrieveTimeZoneFromDB();
 	return 0;
 }
