@@ -54,7 +54,7 @@ int Network::size(void){
 	return nodes.size();
 }
 
-int Network::to_csv(const char *fp){
+int Network::to_csv(const char *tty, const char *fp){
 	FILE *fd;
 	fd = fopen(fp, "w");
 	if (fd == NULL){
@@ -64,7 +64,7 @@ int Network::to_csv(const char *fp){
 
 	fprintf(fd, "<Network>\n");
 	for (int i=0; i<size(); i++)
-		fprintf(fd, "%s", nodes[i].to_csv(1).c_str());
+		fprintf(fd, "%s", nodes[i].to_csv(tty, 1).c_str());
 	fprintf(fd, "</Network>\n");
 
 	fclose(fd);
