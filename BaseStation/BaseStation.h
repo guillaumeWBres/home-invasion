@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "Network.h"
+#include "TimeZone.h"
 
 class BaseStation {
 
@@ -12,19 +13,13 @@ public:
 
 	// sends email to specified destination
 	void send_email(const char *subject, const char *content, const char *dest);
+
 	// prints self in human readable format
 	void print(void);
 
-	// retrieves time zone for current day
-	// if any is found in .db
-	void retrieveTimeZoneFromDB(void);
-
 private:
-	// updates time to current value
-	void _updateTime(void);
-	
-	Network _network;
-	tm *_now;
+	Network _network; // node network
+	TimeZone _timeZone; // current event timezone
 };
 
 #endif
