@@ -20,7 +20,7 @@ public:
 	void removeNode(Node n);
 
 	// serializes self into .csv format
-	int to_csv(const char *csv);
+	int to_csv(const char *tty, const char *csv);
 
 	// prints self in human readable format
 	void print(void);
